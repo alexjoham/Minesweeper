@@ -1,4 +1,4 @@
-#include "game.hpp"
+#include "game/game.hpp"
 #include <cstdlib> 
 #include <ctime>
 #include <algorithm>
@@ -96,6 +96,7 @@ std::vector<Playerield> Game::makeMove(int buttonID) {
                     playerfield[i][j].fieldType = getFieldType(i, j);
                     if (playerfield[i][j].fieldType == FieldType::BOMB) {
                         revealedButtons.push_back(playerfield[i][j]);
+                        playerfield[i][j].hidden = true; // Will be revealed later
                         return revealedButtons;
                     }
                     std::vector<Playerield> vector = revealFieldsAroundMove(i, j);
@@ -123,11 +124,12 @@ std::vector<Playerield> Game::revealFieldsAroundMove(int row, int column) {
         row = processed.row;
         column = processed.column;
         if (processed.hidden) {
-            processed.hidden = false;
             FieldType fieldType = getFieldType(row, column);
             if (fieldType == FieldType::BOMB) {
                 continue;
             }
+            processed.hidden = false;
+            playerfield[row][column].hidden = false;
             playerfield[row][column].fieldType = fieldType;
             revealedFields.push_back(playerfield[row][column]);
             if (fieldType == FieldType::ONE || fieldType == FieldType::TWO || fieldType == FieldType::THREE || fieldType == FieldType::FOUR || fieldType == FieldType::FIVE) {
@@ -140,9 +142,7 @@ std::vector<Playerield> Game::revealFieldsAroundMove(int row, int column) {
         int c_end = column + 1 >= FIELD_SIZE ? FIELD_SIZE - 1 : column + 1;
         for(int i = r_start; i <= r_end; i++) {
             for(int j = c_start; j <= c_end; j++) {
-                int buttonID = playerfield[i][j].buttonID;
-                auto button = std::find_if(revealedFields.begin(), revealedFields.end(), [buttonID](Playerield i) { return i.buttonID == buttonID; });
-                if (button == revealedFields.end()) {
+                if (playerfield[i][j].hidden) {
                     playerfield[i][j].row = i;
                     playerfield[i][j].column = j;
                     toProcess.push(playerfield[i][j]);
@@ -154,4 +154,29 @@ std::vector<Playerield> Game::revealFieldsAroundMove(int row, int column) {
     
 
     return revealedFields;
+}
+
+std::vector<Playerield> Game::revealAll() {
+    std::vector<Playerield> revealedButtons;
+    for (int i = 0; i < FIELD_SIZE; i++) {
+        for(int j = 0; j < FIELD_SIZE; j++) {
+            if(playerfield[i][j].hidden) {
+                playerfield[i][j].hidden = false;
+                playerfield[i][j].fieldType = getFieldType(i, j);
+                revealedButtons.push_back(playerfield[i][j]);
+            }
+        }
+    }
+    return revealedButtons;
+}
+
+bool Game::game_won() {
+    for (int i = 0; i < FIELD_SIZE; i++) {
+        for(int j = 0; j < FIELD_SIZE; j++) {
+            if(playerfield[i][j].hidden) {
+                if(getFieldType(i, j) != FieldType::BOMB) return false;
+            }
+        }
+    }
+    return true;
 }

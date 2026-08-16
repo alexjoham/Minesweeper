@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "enums/game_state.hpp"
-#include "game.hpp"
+#include "game/game.hpp"
 
 
 static termios term;
@@ -16,6 +16,8 @@ static bool g_raw_active = false;
 GameState state = GameState::MENU;
 Game game;
 std::vector<std::unique_ptr<Button>> game_buttons;
+static bool set_flag = false;
+UnicodeButton flag_button = UnicodeButton(0, 1, 3, "\u2691", "\x1b[93m");
 
 static void restore_terminal() {
     if (!g_raw_active) return;
@@ -78,6 +80,19 @@ static void init_game() {
     game.setPlayerfield(buttonIDs);
 }
 
+static void drawGameInfo() {
+    flag_button.draw();
+    emit_terminal_command(at(0, 5) + "\x1b[2mPress q to quit.\x1b[0m");
+}
+
+static void drawGameLost() {
+    emit_terminal_command(at(0, 0) + "\x1b[91mGAME LOST\x1b[0m\x1b[2m. Press \x1b[0m\x1b[1mr\x1b[0m\x1b[2m to retry.\x1b[0m");
+}
+
+static void drawGameWon() {
+    emit_terminal_command(at(0, 0) + "\x1b[92mGAME WON!\x1b[0m\x1b[2m. Press \x1b[0m\x1b[1mr\x1b[0m\x1b[2m to replay.\x1b[0m");
+}
+
 int main() {
     setup_terminal();
 
@@ -99,6 +114,7 @@ int main() {
 
         if (buf.size() == 1 && c != '\x1b') {
             if (c == 'q' || c == 3 /* Ctrl+C */) running = false;
+            if (c == 'r') { state = GameState::GAME; init_game(); clear_screen(); buttons = std::move(game_buttons); drawGameInfo(); game.drawGame(2,2, buttons); continue; }
             buf.clear();
             continue;
         }
@@ -111,7 +127,9 @@ int main() {
 
         if (c == 'M' || c == 'm') {
             int btn = 0, mx = 0, my = 0;
-            if (std::sscanf(buf.c_str(), "\x1b[<%d;%d;%d", &btn, &mx, &my) == 3) {
+            bool parsed = std::sscanf(buf.c_str(), "\x1b[<%d;%d;%d", &btn, &mx, &my) == 3;
+            buf.clear();
+            if (parsed) {
                 bool press   = (c == 'M');
                 bool motion  = (btn & 0x20) != 0;   // drag, not a fresh click
                 bool wheel   = (btn & 0x40) != 0;
@@ -120,6 +138,7 @@ int main() {
                 if (!motion && !wheel && is_left) {
                     if (press) {
                         for (auto &b : buttons) b->press(mx, my);
+                        flag_button.press(mx, my);
                     } else {
                         switch (state) {
                             case GameState::MENU: {
@@ -132,52 +151,101 @@ int main() {
                                     }
                                 }
                                 if (quit_clicked) { running = false; buf.clear(); continue; }
-                                if (switch_to_game) { state = GameState::GAME; init_game(); clear_screen(); buttons = std::move(game_buttons); game.drawGame(2,2, buttons); continue; }
+                                if (switch_to_game) { state = GameState::GAME; init_game(); clear_screen(); buttons = std::move(game_buttons); drawGameInfo(); game.drawGame(2,2, buttons); continue; }
                                 draw_all(buttons);
                                 break;
                             }
                             case GameState::GAME: {
+                                if (flag_button.release(my, my)) {
+                                    set_flag = !set_flag;
+                                    if (set_flag) {
+                                        flag_button.color = "\x1b[7m";
+                                    } else {
+                                        flag_button.color = "\x1b[93m";
+                                    }
+                                    drawGameInfo();
+                                    game.drawGame(2,2, buttons);
+                                    continue;
+                                }
+                                bool game_lost = false;
+                                bool game_won = false;
                                 for (auto &b : buttons) {
                                     if (b->release(mx, my)) {
-                                        std::vector<Playerield> result = game.makeMove(b->getID());
-                                        if(result.size() > 0) {
-                                            if (result.size() == 1 && result.front().fieldType == FieldType::BOMB) {
-                                                // GAME OVER
-                                                // game.revealAll();
-                                            }
-                                            for (auto &resultField: result) {
-                                                int buttonID = resultField.buttonID;
-                                                auto button = std::find_if(buttons.begin(), buttons.end(), [buttonID](const std::unique_ptr<Button>& i) { return i->getID() == buttonID; });
-                                                if (button != buttons.end()) {
-                                                    UnicodeButton* ub = dynamic_cast<UnicodeButton*>(button->get());
-                                                    if (ub) {
-                                                        switch (resultField.fieldType) {
-                                                            case FieldType::BOMB:        ub->code = "★"; ub->color = "\x1b[91m"; break;
-                                                            case FieldType::NEUTRAL:     ub->code = " ";      ub->color = "\x1b[97m"; break;
-                                                            case FieldType::ONE:         ub->code = "1";      ub->color = "\x1b[94m"; break;
-                                                            case FieldType::TWO:         ub->code = "2";      ub->color = "\x1b[92m"; break;
-                                                            case FieldType::THREE:       ub->code = "3";      ub->color = "\x1b[91m"; break;
-                                                            case FieldType::FOUR:        ub->code = "4";      ub->color = "\x1b[95m"; break;
-                                                            case FieldType::FIVE:        ub->code = "5";      ub->color = "\x1b[93m"; break;
-                                                            default: break;
+                                        if (!set_flag) {
+                                            std::vector<Playerield> result = game.makeMove(b->getID());
+                                            if(result.size() > 0) {
+                                                if (result.size() == 1 && result.front().fieldType == FieldType::BOMB) {
+                                                    result = game.revealAll();
+                                                    game_lost = true;
+                                                }
+                                                for (auto &resultField: result) {
+                                                    int buttonID = resultField.buttonID;
+                                                    auto button = std::find_if(buttons.begin(), buttons.end(), [buttonID](const std::unique_ptr<Button>& i) { return i->getID() == buttonID; });
+                                                    if (button != buttons.end()) {
+                                                        UnicodeButton* ub = dynamic_cast<UnicodeButton*>(button->get());
+                                                        if (ub) {
+                                                            switch (resultField.fieldType) {
+                                                                case FieldType::BOMB:        ub->code = "★"; ub->color = "\x1b[91m"; break;
+                                                                case FieldType::NEUTRAL:     ub->code = " ";      ub->color = "\x1b[97m"; break;
+                                                                case FieldType::ONE:         ub->code = "1";      ub->color = "\x1b[94m"; break;
+                                                                case FieldType::TWO:         ub->code = "2";      ub->color = "\x1b[92m"; break;
+                                                                case FieldType::THREE:       ub->code = "3";      ub->color = "\x1b[91m"; break;
+                                                                case FieldType::FOUR:        ub->code = "4";      ub->color = "\x1b[95m"; break;
+                                                                case FieldType::FIVE:        ub->code = "5";      ub->color = "\x1b[93m"; break;
+                                                                default: break;
+                                                            }
+                                                            ub->activated = false;
                                                         }
-                                                        ub->activated = false;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            Playerield field = game.toggleFlag(b->getID());
+                                            if (field.buttonID != -1) {
+                                                UnicodeButton* ub = dynamic_cast<UnicodeButton*>(b.get());
+                                                if (ub) {
+                                                    if (field.flagged) {
+                                                        ub->code = "\u2691";
+                                                        ub->color = "\x1b[93m";
+                                                    } else {
+                                                        ub->code = "\u25A2";
+                                                        ub->color = "\x1b[97m";
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                                if (game_lost) {
+                                    state = GameState::LOST;
+                                    drawGameLost();
+                                    game.drawGame(2,2, buttons);
+                                    continue;
+                                } else if (game.game_won()) {
+                                    game.revealAll();
+                                    drawGameWon();
+                                    game.drawGame(2,2, buttons);
+                                    state = GameState::WON;
+                                    continue;
+                                }
+                                drawGameInfo();
                                 game.drawGame(2,2, buttons);
                                 break;
                             }
+                            case GameState::LOST:
+                                drawGameLost();
+                                game.drawGame(2,2, buttons);
+                                break;
+                            case GameState::WON:
+                                drawGameWon();
+                                game.drawGame(2,2, buttons);
+                                break;
                             default:
                             break;
                         }
                     }
                 }
             }
-            buf.clear();
         }
 
         if (buf.size() > 32) buf.clear(); // give up on a malformed sequence

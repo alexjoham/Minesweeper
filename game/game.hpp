@@ -1,11 +1,12 @@
-#include "button.hpp"
+#include "../button/button.hpp"
 #include <vector>
-#include "enums/field_type.hpp"
+#include "../enums/field_type.hpp"
 
 struct Playerield
 {
     bool hidden = true;
-    int buttonID;
+    bool flagged = false;
+    int buttonID = -1;
     FieldType fieldType = FieldType::HIDDEN;
     int row;
     int column;
@@ -78,5 +79,21 @@ class Game {
 
         void drawGame(int x, int y, std::vector<std::unique_ptr<Button>> &buttons);
 
+        std::vector<Playerield> revealAll();
+
         std::vector<Playerield> makeMove(int buttonID);
+
+        Playerield toggleFlag(int buttonID) { 
+            for (int i = 0; i < FIELD_SIZE; i++) {
+                for(int j = 0; j < FIELD_SIZE; j++) {
+                    if (playerfield[i][j].buttonID == buttonID && playerfield[i][j].hidden) {
+                        playerfield[i][j].flagged = !playerfield[i][j].flagged;
+                        return playerfield[i][j];
+                    }
+                }
+            }
+            return Playerield{};
+        }
+
+        bool game_won();
 };

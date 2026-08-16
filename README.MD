@@ -1,6 +1,6 @@
 Compile with:
 ```bash
-clang++ -std=c++17 -O2 main.cpp -o minesweeper
+make
 ```
 Run with:
 ```bash
