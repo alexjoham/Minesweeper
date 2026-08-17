@@ -17,7 +17,10 @@ GameState state = GameState::MENU;
 Game game;
 std::vector<std::unique_ptr<Button>> game_buttons;
 static bool set_flag = false;
-UnicodeButton flag_button = UnicodeButton(0, 1, 3, "\u2691", "\x1b[93m");
+UnicodeButton flag_button = UnicodeButton(3, 1, 3, "\u2691", "\x1b[93m");
+
+static int PLAYING_FIELD_X = 2;
+static int PLAYING_FIELD_Y = 2;
 
 static void restore_terminal() {
     if (!g_raw_active) return;
@@ -82,7 +85,7 @@ static void init_game() {
 
 static void drawGameInfo() {
     flag_button.draw();
-    emit_terminal_command(at(0, 5) + "\x1b[2mPress q to quit.\x1b[0m");
+    emit_terminal_command(at(0, 7) + "\x1b[2mPress q to quit.\x1b[0m");
 }
 
 static void drawGameLost() {
@@ -91,6 +94,13 @@ static void drawGameLost() {
 
 static void drawGameWon() {
     emit_terminal_command(at(0, 0) + "\x1b[92mGAME WON!\x1b[0m\x1b[2m. Press \x1b[0m\x1b[1mr\x1b[0m\x1b[2m to replay.\x1b[0m");
+}
+
+static void drawGameRules(int x, int y) {
+    emit_terminal_command(at(x, y) + "\x1b[2mLeft-click to open a square.\x1b[0m");
+    emit_terminal_command(at(x+1, y) + "\x1b[2mSelect the flag to place a flag with left click where you think a mine is.\x1b[0m");
+    emit_terminal_command(at(x+2, y) + "\x1b[2mThe numbers show you how many mines are around this square (vertically, horizontally and diagonally.\x1b[0m");
+    
 }
 
 int main() {
@@ -114,7 +124,7 @@ int main() {
 
         if (buf.size() == 1 && c != '\x1b') {
             if (c == 'q' || c == 3 /* Ctrl+C */) running = false;
-            if (c == 'r') { state = GameState::GAME; init_game(); clear_screen(); buttons = std::move(game_buttons); drawGameInfo(); game.drawGame(2,2, buttons); continue; }
+            if (c == 'r') { state = GameState::GAME; init_game(); clear_screen(); buttons = std::move(game_buttons); drawGameInfo(); game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons); continue; }
             buf.clear();
             continue;
         }
@@ -151,7 +161,15 @@ int main() {
                                     }
                                 }
                                 if (quit_clicked) { running = false; buf.clear(); continue; }
-                                if (switch_to_game) { state = GameState::GAME; init_game(); clear_screen(); buttons = std::move(game_buttons); drawGameInfo(); game.drawGame(2,2, buttons); continue; }
+                                if (switch_to_game) {
+                                    state = GameState::GAME; 
+                                    init_game(); 
+                                    clear_screen(); 
+                                    buttons = std::move(game_buttons); 
+                                    drawGameInfo(); 
+                                    int height = game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons);
+                                    drawGameRules(PLAYING_FIELD_X+height, PLAYING_FIELD_Y); continue;
+                                }
                                 draw_all(buttons);
                                 break;
                             }
@@ -164,7 +182,7 @@ int main() {
                                         flag_button.color = "\x1b[93m";
                                     }
                                     drawGameInfo();
-                                    game.drawGame(2,2, buttons);
+                                    game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons);
                                     continue;
                                 }
                                 bool game_lost = false;
@@ -174,7 +192,7 @@ int main() {
                                         if (!set_flag) {
                                             std::vector<Playerield> result = game.makeMove(b->getID());
                                             if(result.size() > 0) {
-                                                if (result.size() == 1 && result.front().fieldType == FieldType::BOMB) {
+                                                if (result.size() == 1 && result.front().fieldType == FieldType::MINE) {
                                                     result = game.revealAll();
                                                     game_lost = true;
                                                 }
@@ -185,7 +203,7 @@ int main() {
                                                         UnicodeButton* ub = dynamic_cast<UnicodeButton*>(button->get());
                                                         if (ub) {
                                                             switch (resultField.fieldType) {
-                                                                case FieldType::BOMB:        ub->code = "★"; ub->color = "\x1b[91m"; break;
+                                                                case FieldType::MINE:        ub->code = "★"; ub->color = "\x1b[91m"; break;
                                                                 case FieldType::NEUTRAL:     ub->code = " ";      ub->color = "\x1b[97m"; break;
                                                                 case FieldType::ONE:         ub->code = "1";      ub->color = "\x1b[94m"; break;
                                                                 case FieldType::TWO:         ub->code = "2";      ub->color = "\x1b[92m"; break;
@@ -219,26 +237,27 @@ int main() {
                                 if (game_lost) {
                                     state = GameState::LOST;
                                     drawGameLost();
-                                    game.drawGame(2,2, buttons);
+                                    game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons);
                                     continue;
                                 } else if (game.game_won()) {
                                     game.revealAll();
                                     drawGameWon();
-                                    game.drawGame(2,2, buttons);
+                                    game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons);
                                     state = GameState::WON;
                                     continue;
                                 }
                                 drawGameInfo();
-                                game.drawGame(2,2, buttons);
+                                int height = game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons);
+                                drawGameRules(PLAYING_FIELD_X+height, PLAYING_FIELD_Y);
                                 break;
                             }
                             case GameState::LOST:
                                 drawGameLost();
-                                game.drawGame(2,2, buttons);
+                                game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons);
                                 break;
                             case GameState::WON:
                                 drawGameWon();
-                                game.drawGame(2,2, buttons);
+                                game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons);
                                 break;
                             default:
                             break;

@@ -1,8 +1,8 @@
 enum class FieldType {
     HIDDEN,
     NEUTRAL,
-    BOMB,
-    MARKED_BOMB,
+    MINE,
+    MARKED_MINE,
     ONE,
     TWO,
     THREE,

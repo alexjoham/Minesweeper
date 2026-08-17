@@ -17,9 +17,9 @@ class Game {
     private:
         /**
          * minefield state
-         * -1: bomb
+         * -1: mine
          * 0: none
-         * 1: one bomb nearby, for all other numbers the same
+         * 1: one mine nearby, for all other numbers the same
          */
         int minefield[9][9];
 
@@ -27,7 +27,7 @@ class Game {
 
         void generateRandomField();
 
-        void updateFieldsAroundBomb(int row, int column);
+        void updateFieldsAroundmine(int row, int column);
 
         std::vector<Playerield> revealFieldsAroundMove(int row, int column);
 
@@ -35,7 +35,7 @@ class Game {
             switch (minefield[row][column])
             {
             case -1:
-                return FieldType::BOMB;
+                return FieldType::MINE;
                 break;
             case 0:
                 return FieldType::NEUTRAL;
@@ -77,7 +77,10 @@ class Game {
 
         void startGame();
 
-        void drawGame(int x, int y, std::vector<std::unique_ptr<Button>> &buttons);
+        /**
+         * @return height of the field
+         */
+        int drawGame(int x, int y, std::vector<std::unique_ptr<Button>> &buttons);
 
         std::vector<Playerield> revealAll();
 

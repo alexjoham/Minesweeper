@@ -12,7 +12,7 @@ void Game::generateRandomField() {
 
     std::vector<int> mines;
 
-    // Fill the filed with bombs
+    // Fill the filed with mines
     for (int i = 0; i < NUM_MINES; i++) {
         const int j = (rand()%(FIELD_SIZE*FIELD_SIZE));
         bool in_array = std::find(mines.begin(), mines.end(), j) != mines.end();
@@ -27,17 +27,17 @@ void Game::generateRandomField() {
         }
     }
     
-    // Set the number of bombs nearby
+    // Set the number of mines nearby
     for (int i = 0; i < FIELD_SIZE; i++) {
         for(int j = 0; j < FIELD_SIZE; j++) {
             if (minefield[i][j] == -1) {
-                updateFieldsAroundBomb(i, j);
+                updateFieldsAroundmine(i, j);
             }
         }
     }
 }
 
-void Game::updateFieldsAroundBomb(int row, int column) {
+void Game::updateFieldsAroundmine(int row, int column) {
     int r_start = row - 1 < 0 ? 0 : row - 1;
     int r_end = row + 1 >= FIELD_SIZE ? FIELD_SIZE - 1 : row + 1;
     int c_start = column - 1 < 0 ? 0 : column - 1;
@@ -45,8 +45,8 @@ void Game::updateFieldsAroundBomb(int row, int column) {
 
     for(int i = r_start; i <= r_end; i++) {
         for(int j = c_start; j <= c_end; j++) {
-            if (row == i && column == j) continue; // bomb that we update around
-            if (minefield[i][j] == -1) continue; // bomb itself, do not update!
+            if (row == i && column == j) continue; // mine that we update around
+            if (minefield[i][j] == -1) continue; // mine itself, do not update!
             minefield[i][j] += 1;
         }
     }
@@ -58,7 +58,7 @@ void Game::startGame() {
     generateRandomField();
 }
 
-void Game::drawGame(int x, int y, std::vector<std::unique_ptr<Button>> &buttons) {
+int Game::drawGame(int x, int y, std::vector<std::unique_ptr<Button>> &buttons) {
     emit_terminal_command(at(x, y) + "\u250C");
     for (int i = 1; i < 3*FIELD_SIZE; i+=3) {
         emit_terminal_command(at(x, y+i) + "\u2500");
@@ -83,6 +83,7 @@ void Game::drawGame(int x, int y, std::vector<std::unique_ptr<Button>> &buttons)
         emit_terminal_command(at(x+FIELD_SIZE+1, y+i+2) + "\u2500");
     }
     emit_terminal_command(at(x+FIELD_SIZE+1, y+3*FIELD_SIZE+1) + "\u2518");
+    return FIELD_SIZE+2;
 }
 
 std::vector<Playerield> Game::makeMove(int buttonID) {
@@ -94,7 +95,7 @@ std::vector<Playerield> Game::makeMove(int buttonID) {
                     // So it is ignored in the revealAll method
                     playerfield[i][j].hidden = false;
                     playerfield[i][j].fieldType = getFieldType(i, j);
-                    if (playerfield[i][j].fieldType == FieldType::BOMB) {
+                    if (playerfield[i][j].fieldType == FieldType::MINE) {
                         revealedButtons.push_back(playerfield[i][j]);
                         playerfield[i][j].hidden = true; // Will be revealed later
                         return revealedButtons;
@@ -125,7 +126,7 @@ std::vector<Playerield> Game::revealFieldsAroundMove(int row, int column) {
         column = processed.column;
         if (processed.hidden) {
             FieldType fieldType = getFieldType(row, column);
-            if (fieldType == FieldType::BOMB) {
+            if (fieldType == FieldType::MINE) {
                 continue;
             }
             processed.hidden = false;
@@ -174,7 +175,7 @@ bool Game::game_won() {
     for (int i = 0; i < FIELD_SIZE; i++) {
         for(int j = 0; j < FIELD_SIZE; j++) {
             if(playerfield[i][j].hidden) {
-                if(getFieldType(i, j) != FieldType::BOMB) return false;
+                if(getFieldType(i, j) != FieldType::MINE) return false;
             }
         }
     }
