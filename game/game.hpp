@@ -1,5 +1,7 @@
-#include "../button/button.hpp"
+#pragma once
 #include <vector>
+#include <memory>
+#include "../button/button.hpp"
 #include "../enums/field_type.hpp"
 
 struct Playerield

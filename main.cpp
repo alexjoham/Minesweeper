@@ -5,7 +5,9 @@
 #include <cstdlib>
 #include <string>
 #include <csignal>
+#include <memory>
 #include <vector>
+#include <algorithm>
 
 #include "enums/game_state.hpp"
 #include "game/game.hpp"

@@ -1,3 +1,4 @@
+#pragma once
 enum class FieldType {
     HIDDEN,
     NEUTRAL,
