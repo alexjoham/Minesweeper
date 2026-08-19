@@ -188,7 +188,6 @@ int main() {
                                     continue;
                                 }
                                 bool game_lost = false;
-                                bool game_won = false;
                                 for (auto &b : buttons) {
                                     if (b->release(mx, my)) {
                                         if (!set_flag) {

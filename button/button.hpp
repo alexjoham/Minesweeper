@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <utility>
 #include "../helpers.hpp"
 
 class Button {
@@ -14,7 +15,7 @@ class Button {
         bool pressed = false;
         bool activated = true;
 
-        virtual void draw() {};
+        virtual void draw() const = 0;
 
         int getID() {
             return id;
@@ -42,7 +43,7 @@ class Button {
             id = ++ID;
         }
 
-        bool operator==(const Button& rhs) { return (id == rhs.id); }
+        bool operator==(const Button& rhs) const { return (id == rhs.id); }
         bool operator!=(const Button& rhs) { return !operator==(rhs); }
 
         virtual ~Button() = default;
@@ -51,12 +52,13 @@ class Button {
 class LabelButton : public Button {
     public:
         std::string label;
-        LabelButton(int x, int y, int w, std::string label, std::string color) : Button(x, y, w, color), label(label) {}
-        void draw() {
-            if ((int)label.size() > w - 2) label.resize(w - 2);
-            int pad = w - 2 - (int)label.size();
-            int left = pad / 2;
-            int right = pad - left;
+        LabelButton(int x, int y, int w, std::string label, std::string color) : Button(x, y, w, color), label(label) {}        
+        void draw() const override {
+            const std::size_t visible = static_cast<std::size_t>(std::max(0, w - 2));
+            const std::string_view text = std::string_view(label).substr(0, visible);
+            const std::size_t pad   = visible - text.size();
+            const std::size_t left  = pad / 2;
+            const std::size_t right = pad - left;
             std::string face = " ";
             face += std::string(left, ' ') + label + std::string(right, ' ');
             face += " ";
@@ -69,7 +71,7 @@ class UnicodeButton : public Button {
     public:
         std::string code;
         UnicodeButton(int x, int y, int w, std::string code, std::string color) : Button(x, y, w, color), code(code) {}
-        void draw() {
+        void draw() const override {
             std::string face = std::string(1, ' ') + code + std::string(1, ' ');
             std::string style = pressed ? "\x1b[7m" : color;  // reverse color when held
             emit_terminal_command(at(y, x) + style + face + "\x1b[0m"); //TODO: Switch x and y

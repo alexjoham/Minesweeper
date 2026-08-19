@@ -68,7 +68,7 @@ class Game {
         const int FIELD_SIZE = 9;
 
         void setPlayerfield(std::vector<int> buttonIDs) {
-            int index = 0;
+            size_t index = 0;
             for (int i = 0; i < FIELD_SIZE; i++) {
                 for(int j = 0; j < FIELD_SIZE; j++) {
                     playerfield[i][j].buttonID = buttonIDs.at(index);
