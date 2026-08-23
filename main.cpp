@@ -179,9 +179,9 @@ int main() {
                                 if (flag_button.release(my, my)) {
                                     set_flag = !set_flag;
                                     if (set_flag) {
-                                        flag_button.color = "\x1b[7m";
+                                        flag_button.setColor("\x1b[7m");
                                     } else {
-                                        flag_button.color = "\x1b[93m";
+                                        flag_button.setColor("\x1b[93m");
                                     }
                                     drawGameInfo();
                                     game.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, buttons);
@@ -204,13 +204,13 @@ int main() {
                                                         UnicodeButton* ub = dynamic_cast<UnicodeButton*>(button->get());
                                                         if (ub) {
                                                             switch (resultField.fieldType) {
-                                                                case FieldType::MINE:        ub->code = "★"; ub->color = "\x1b[91m"; break;
-                                                                case FieldType::NEUTRAL:     ub->code = " ";      ub->color = "\x1b[97m"; break;
-                                                                case FieldType::ONE:         ub->code = "1";      ub->color = "\x1b[94m"; break;
-                                                                case FieldType::TWO:         ub->code = "2";      ub->color = "\x1b[92m"; break;
-                                                                case FieldType::THREE:       ub->code = "3";      ub->color = "\x1b[91m"; break;
-                                                                case FieldType::FOUR:        ub->code = "4";      ub->color = "\x1b[95m"; break;
-                                                                case FieldType::FIVE:        ub->code = "5";      ub->color = "\x1b[93m"; break;
+                                                                case FieldType::MINE:        ub->setCode("★"); ub->setColor("\x1b[91m"); break;
+                                                                case FieldType::NEUTRAL:     ub->setCode(" ");      ub->setColor("\x1b[97m"); break;
+                                                                case FieldType::ONE:         ub->setCode("1");      ub->setColor("\x1b[94m"); break;
+                                                                case FieldType::TWO:         ub->setCode("2");      ub->setColor("\x1b[92m"); break;
+                                                                case FieldType::THREE:       ub->setCode("3");      ub->setColor("\x1b[91m"); break;
+                                                                case FieldType::FOUR:        ub->setCode("4");      ub->setColor("\x1b[95m"); break;
+                                                                case FieldType::FIVE:        ub->setCode("5");      ub->setColor("\x1b[93m"); break;
                                                                 default: break;
                                                             }
                                                             ub->activated = false;
@@ -224,11 +224,11 @@ int main() {
                                                 UnicodeButton* ub = dynamic_cast<UnicodeButton*>(b.get());
                                                 if (ub) {
                                                     if (field.flagged) {
-                                                        ub->code = "\u2691";
-                                                        ub->color = "\x1b[93m";
+                                                        ub->setCode("\u2691");
+                                                        ub->setColor("\x1b[93m");
                                                     } else {
-                                                        ub->code = "\u25A2";
-                                                        ub->color = "\x1b[97m";
+                                                        ub->setCode("\u25A2");
+                                                        ub->setColor("\x1b[97m");
                                                     }
                                                 }
                                             }

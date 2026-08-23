@@ -1,6 +1,6 @@
 Build with:
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build
 cmake --build build
 ```
 Run with:

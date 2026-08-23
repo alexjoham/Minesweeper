@@ -8,10 +8,10 @@ add_executable(minesweeper
 )
 
 set_target_properties(minesweeper PROPERTIES
-    CMAKE_EXPORT_COMPILE_COMMANDS ON
+    EXPORT_COMPILE_COMMANDS ON
     CXX_EXTENSIONS OFF
 )
 
 target_include_directories(minesweeper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(minesweeper PRIVATE cxx_std_20)
-target_compile_options(minesweeper PRIVATE -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Woverloaded-virtual -Werror)
+target_compile_options(minesweeper PRIVATE -Wall -Wextra -Wpedantic -Wshadow-all -Wconversion -Wsign-conversion -Woverloaded-virtual -Werror)
