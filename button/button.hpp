@@ -78,7 +78,7 @@ class LabelButton : public Button {
             face += std::string(right, ' ');
             face += " ";
             std::string style = pressed ? "\x1b[7m" : color_;  // reverse color when held
-            emit_terminal_command(at(y_, x_) + style + face + "\x1b[0m"); //TODO: Switch x and y
+            emit_terminal_command(at(y_, x_) + style + face + "\x1b[0m");
         }
 };
 
@@ -90,7 +90,7 @@ class UnicodeButton : public Button {
         void draw() const override {
             std::string face = std::string(1, ' ') + code_ + std::string(1, ' ');
             std::string style = pressed ? "\x1b[7m" : color_;  // reverse color when held
-            emit_terminal_command(at(y_, x_) + style + face + "\x1b[0m"); //TODO: Switch x and y
+            emit_terminal_command(at(y_, x_) + style + face + "\x1b[0m");
         }
 
         void setCode(std::string new_code) {

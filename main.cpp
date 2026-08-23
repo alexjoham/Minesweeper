@@ -21,8 +21,8 @@ std::vector<std::unique_ptr<Button>> game_buttons;
 static bool set_flag = false;
 UnicodeButton flag_button = UnicodeButton(3, 1, 3, "\u2691", "\x1b[93m");
 
-static int PLAYING_FIELD_X = 2;
-static int PLAYING_FIELD_Y = 2;
+constexpr int PLAYING_FIELD_X = 2;
+constexpr int PLAYING_FIELD_Y = 2;
 
 static void restore_terminal() {
     if (!g_raw_active) return;
@@ -77,7 +77,7 @@ static void init_game() {
     std::vector<int> buttonIDs;
     for (int i = 1; i <= game.FIELD_SIZE; i++) {
         for (int j = 0; j < game.FIELD_SIZE; j++) {
-            UnicodeButton b = UnicodeButton(10+i*3, 5+j, 3, "\u25A2", "\x1b[97m");
+            UnicodeButton b = UnicodeButton(PLAYING_FIELD_X + j*3 + 1, PLAYING_FIELD_Y+i, 3, "\u25A2", "\x1b[97m");
             game_buttons.push_back(std::make_unique<UnicodeButton>(b));
             buttonIDs.push_back(b.getID());
         }
