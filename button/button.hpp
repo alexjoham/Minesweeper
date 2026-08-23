@@ -34,7 +34,7 @@ class Button {
         }
 
         void setColor(std::string new_color) {
-            color_ = new_color;
+            color_ = std::move(new_color);
         }
 
         void press(int mx, int my) {
@@ -51,7 +51,7 @@ class Button {
             return false;
         }
 
-        Button(int x, int y, int w, std::string color) : x_(x), y_(y), w_(w), color_(color) {
+        Button(int x, int y, int w, std::string color) : x_(x), y_(y), w_(w), color_(std::move(color)) {
             id = ++ID;
         }
 
@@ -62,9 +62,10 @@ class Button {
 };
 
 class LabelButton : public Button {
-    public:
+    private:
         std::string label_;
-        LabelButton(int x, int y, int w, std::string label, std::string color) : Button(x, y, w, color), label_(label) {}        
+    public:
+        LabelButton(int x, int y, int w, std::string label, std::string color) : Button(x, y, w, color), label_(std::move(label)) {}        
         void draw() const override {
             const std::size_t visible = static_cast<std::size_t>(std::max(0, w_ - 2));
             const std::string_view text = std::string_view(label_).substr(0, visible);
@@ -85,7 +86,7 @@ class UnicodeButton : public Button {
     private:
         std::string code_;
     public:
-        UnicodeButton(int x, int y, int w, std::string code, std::string color) : Button(x, y, w, color), code_(code) {}
+        UnicodeButton(int x, int y, int w, std::string code, std::string color) : Button(x, y, w, color), code_(std::move(code)) {}
         void draw() const override {
             std::string face = std::string(1, ' ') + code_ + std::string(1, ' ');
             std::string style = pressed ? "\x1b[7m" : color_;  // reverse color when held
@@ -93,6 +94,6 @@ class UnicodeButton : public Button {
         }
 
         void setCode(std::string new_code) {
-            code_ = new_code;
+            code_ = std::move(new_code);
         }
 };
