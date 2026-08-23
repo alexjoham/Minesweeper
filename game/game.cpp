@@ -69,11 +69,12 @@ int Game::drawGame(int x, int y, std::vector<std::unique_ptr<Button>> &buttons) 
     for (int i = 1; i <= FIELD_SIZE; i++) {
         emit_terminal_command(at(x+i, y) + "\u2502");
         for (int j = 0; j < FIELD_SIZE; j++) {
-            size_t pos = static_cast<std::size_t>(std::max(0, (i-1) * FIELD_SIZE + j));
-            buttons.at(pos)->x = x+j*3+1;
-            buttons.at(pos)->y = y+i;
-            buttons.at(pos)->w = 3;
-            buttons.at(pos)->draw();
+            const std::size_t pos = static_cast<std::size_t>((i - 1) * FIELD_SIZE + j);
+            Button& button = *buttons.at(pos);
+            button.x = x + j*3 + 1;
+            button.y = y+i;
+            button.w = 3;
+            button.draw();
         }
         emit_terminal_command(at(x+i, y+3*FIELD_SIZE+1) + "\u2502");
     }

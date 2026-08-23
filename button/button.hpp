@@ -60,7 +60,9 @@ class LabelButton : public Button {
             const std::size_t left  = pad / 2;
             const std::size_t right = pad - left;
             std::string face = " ";
-            face += std::string(left, ' ') + label + std::string(right, ' ');
+            face += std::string(left, ' ');
+            face += text;
+            face += std::string(right, ' ');
             face += " ";
             std::string style = pressed ? "\x1b[7m" : color;  // reverse color when held
             emit_terminal_command(at(y, x) + style + face + "\x1b[0m"); //TODO: Switch x and y
