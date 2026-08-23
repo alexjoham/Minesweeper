@@ -22,16 +22,9 @@ class Button {
         }
 
         bool contains(int cx, int cy) const {
-            return cy == y_ && cx >= x_ && cx < x_ + w_;
+            return cx == x_ && cy >= y_ && cy < y_ + w_;
         }
 
-        void setX(int new_x) {
-            x_ = new_x;
-        }
-
-        void setY(int new_y) {
-            y_ = new_y;
-        }
 
         void setColor(std::string new_color) {
             color_ = std::move(new_color);
@@ -78,7 +71,7 @@ class LabelButton : public Button {
             face += std::string(right, ' ');
             face += " ";
             std::string style = pressed ? "\x1b[7m" : color_;  // reverse color when held
-            emit_terminal_command(at(y_, x_) + style + face + "\x1b[0m");
+            emit_terminal_command(at(x_, y_) + style + face + "\x1b[0m");
         }
 };
 
@@ -90,7 +83,7 @@ class UnicodeButton : public Button {
         void draw() const override {
             std::string face = std::string(1, ' ') + code_ + std::string(1, ' ');
             std::string style = pressed ? "\x1b[7m" : color_;  // reverse color when held
-            emit_terminal_command(at(y_, x_) + style + face + "\x1b[0m");
+            emit_terminal_command(at(x_, y_) + style + face + "\x1b[0m");
         }
 
         void setCode(std::string new_code) {

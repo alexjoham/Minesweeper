@@ -77,7 +77,7 @@ static void init_game() {
     std::vector<int> buttonIDs;
     for (int i = 1; i <= game.FIELD_SIZE; i++) {
         for (int j = 0; j < game.FIELD_SIZE; j++) {
-            UnicodeButton b = UnicodeButton(PLAYING_FIELD_X + j*3 + 1, PLAYING_FIELD_Y+i, 3, "\u25A2", "\x1b[97m");
+            UnicodeButton b = UnicodeButton(PLAYING_FIELD_X+i, PLAYING_FIELD_Y + j*3 + 1, 3, "\u25A2", "\x1b[97m");
             game_buttons.push_back(std::make_unique<UnicodeButton>(b));
             buttonIDs.push_back(b.getID());
         }
@@ -109,8 +109,8 @@ int main() {
     setup_terminal();
 
     std::vector<std::unique_ptr<Button>> buttons;
-    LabelButton start = LabelButton(3,  6, 14, "Start", "\x1b[48;5;24m\x1b[97m");
-    LabelButton quit = LabelButton(35, 6, 14, "Quit",  "\x1b[48;5;52m\x1b[97m");
+    LabelButton start = LabelButton(6, 3, 14, "Start", "\x1b[48;5;24m\x1b[97m");
+    LabelButton quit = LabelButton(6, 35, 14, "Quit",  "\x1b[48;5;52m\x1b[97m");
     buttons.push_back(std::make_unique<LabelButton>(start));
     buttons.push_back(std::make_unique<LabelButton>(quit));
     draw_all(buttons);
@@ -139,7 +139,7 @@ int main() {
 
         if (c == 'M' || c == 'm') {
             int btn = 0, mx = 0, my = 0;
-            bool parsed = std::sscanf(buf.c_str(), "\x1b[<%d;%d;%d", &btn, &mx, &my) == 3;
+            bool parsed = std::sscanf(buf.c_str(), "\x1b[<%d;%d;%d", &btn, &my, &mx) == 3;
             buf.clear();
             if (parsed) {
                 bool press   = (c == 'M');
@@ -176,7 +176,7 @@ int main() {
                                 break;
                             }
                             case GameState::GAME: {
-                                if (flag_button.release(my, my)) {
+                                if (flag_button.release(mx, my)) {
                                     set_flag = !set_flag;
                                     if (set_flag) {
                                         flag_button.setColor("\x1b[7m");
