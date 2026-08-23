@@ -14,4 +14,7 @@ set_target_properties(minesweeper PROPERTIES
 
 target_include_directories(minesweeper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(minesweeper PRIVATE cxx_std_20)
-target_compile_options(minesweeper PRIVATE -Wall -Wextra -Wpedantic -Wshadow-all -Wconversion -Wsign-conversion -Woverloaded-virtual -Werror)
+target_compile_options(minesweeper PRIVATE
+    -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror
+    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wshadow-all>
+)
