@@ -19,7 +19,7 @@ GameState state = GameState::MENU;
 Game game;
 std::vector<std::unique_ptr<Button>> game_buttons;
 static bool set_flag = false;
-UnicodeButton flag_button = UnicodeButton(3, 1, 3, "\u2691", "\x1b[93m");
+UnicodeButton flag_button = UnicodeButton(1, 3, 3, "\u2691", "\x1b[93m");
 
 constexpr int PLAYING_FIELD_X = 2;
 constexpr int PLAYING_FIELD_Y = 2;
@@ -77,9 +77,9 @@ static void init_game() {
     std::vector<int> buttonIDs;
     for (int i = 1; i <= game.FIELD_SIZE; i++) {
         for (int j = 0; j < game.FIELD_SIZE; j++) {
-            UnicodeButton b = UnicodeButton(PLAYING_FIELD_X+i, PLAYING_FIELD_Y + j*3 + 1, 3, "\u25A2", "\x1b[97m");
-            game_buttons.push_back(std::make_unique<UnicodeButton>(b));
-            buttonIDs.push_back(b.getID());
+            auto b = std::make_unique<UnicodeButton>(PLAYING_FIELD_X+i, PLAYING_FIELD_Y + j*3 + 1, 3, "\u25A2", "\x1b[97m");
+            buttonIDs.push_back(b->getID());
+            game_buttons.push_back(std::move(b));
         }
     }
     game.setPlayerfield(buttonIDs);
@@ -109,10 +109,10 @@ int main() {
     setup_terminal();
 
     std::vector<std::unique_ptr<Button>> buttons;
-    LabelButton start = LabelButton(6, 3, 14, "Start", "\x1b[48;5;24m\x1b[97m");
-    LabelButton quit = LabelButton(6, 35, 14, "Quit",  "\x1b[48;5;52m\x1b[97m");
-    buttons.push_back(std::make_unique<LabelButton>(start));
-    buttons.push_back(std::make_unique<LabelButton>(quit));
+    buttons.push_back(std::make_unique<LabelButton>(6, 3, 14, "Start", "\x1b[48;5;24m\x1b[97m"));
+    const int start_id = buttons.back()->getID();
+    buttons.push_back(std::make_unique<LabelButton>(6, 35, 14, "Quit",  "\x1b[48;5;52m\x1b[97m"));
+    const int guit_id = buttons.back()->getID();
     draw_all(buttons);
 
     bool running = true;
@@ -158,8 +158,8 @@ int main() {
                                 bool quit_clicked = false;
                                 for (auto &b : buttons) {
                                     if (b->release(mx, my)) {
-                                        if (*b == start) { switch_to_game = true; }
-                                        else if (*b == quit) { quit_clicked = true; }
+                                        if (b->getID() == start_id) { switch_to_game = true; }
+                                        else if (b->getID() == guit_id) { quit_clicked = true; }
                                     }
                                 }
                                 if (quit_clicked) { running = false; buf.clear(); continue; }

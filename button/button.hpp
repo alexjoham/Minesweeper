@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <utility>
+#include <algorithm>
+#include <string_view>
 #include "../helpers.hpp"
 
 class Button {
@@ -52,6 +54,11 @@ class Button {
         bool operator!=(const Button& rhs) const { return !operator==(rhs); }
 
         virtual ~Button() = default;
+
+        Button(const Button&) = delete;
+        Button& operator=(const Button&) = delete;
+        Button(Button&&) = delete;
+        Button& operator=(Button&&) = delete;
 };
 
 class LabelButton : public Button {
