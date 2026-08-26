@@ -2,6 +2,7 @@
 #include <vector>
 #include <array>
 #include <optional>
+#include "../structs/board_coord.hpp"
 #include "../enums/field_type.hpp"
 
 struct Playerield
@@ -12,8 +13,7 @@ struct Playerield
 };
 
 struct RevealedCell { 
-    size_t row;
-    size_t column;
+    BoardCoord coordinates;
     Playerield cell;
 };
 

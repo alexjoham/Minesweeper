@@ -21,7 +21,7 @@ static termios term;
 static bool g_raw_active = false;
 GameState state = GameState::MENU;
 Game game;
-Tui tui = Tui();
+Tui tui = Tui(PLAYING_FIELD_X, PLAYING_FIELD_Y);
 std::vector<std::unique_ptr<Button>> game_buttons;
 static bool set_flag = false;
 UnicodeButton flag_button = UnicodeButton(1, 3, 3, "\u2691", "\x1b[93m");
@@ -77,9 +77,9 @@ static void draw_all(std::vector<std::unique_ptr<Button>> &buttons) {
 
 static void init_game() {
     game.startGame();
-    for (size_t i = 1; i <= game.getFieldSize(); i++) {
+    for (size_t i = 0; i < game.getFieldSize(); i++) {
         for (size_t j = 0; j < game.getFieldSize(); j++) {
-            auto b = std::make_unique<UnicodeButton>(PLAYING_FIELD_X+i, PLAYING_FIELD_Y + j*3 + 1, 3, "\u25A2", "\x1b[97m");
+            auto b = std::make_unique<UnicodeButton>(PLAYING_FIELD_X + i + 1, PLAYING_FIELD_Y + j * 3 + 1, 3, "\u25A2", "\x1b[97m");
             game_buttons.push_back(std::move(b));
         }
     }
@@ -191,44 +191,18 @@ int main() {
                                 for (auto &b : buttons) {
                                     if (b->release(mx, my)) {
                                         if (!set_flag) {
-                                            std::vector<RevealedCell> result = game.makeMove(static_cast<size_t>(b->getX()), static_cast<size_t>(b->getY()));
-                                            if(result.size() > 0) {
-                                                if (result.size() == 1 && result.front().cell.fieldType == FieldType::MINE) {
-                                                    result = game.revealAll();
-                                                    game_lost = true;
-                                                }
-                                                for (auto &resultField: result) {
-                                                    size_t pos = resultField.row * static_cast<size_t>(game.getFieldSize()) + resultField.column;
-                                                    auto &button = buttons.at(pos);
-                                                    UnicodeButton* ub = dynamic_cast<UnicodeButton*>(button.get());
-                                                    if (ub) {
-                                                        switch (resultField.cell.fieldType) {
-                                                            case FieldType::MINE:        ub->setCode("★"); ub->setColor("\x1b[91m"); break;
-                                                            case FieldType::NEUTRAL:     ub->setCode(" ");      ub->setColor("\x1b[97m"); break;
-                                                            case FieldType::ONE:         ub->setCode("1");      ub->setColor("\x1b[94m"); break;
-                                                            case FieldType::TWO:         ub->setCode("2");      ub->setColor("\x1b[92m"); break;
-                                                            case FieldType::THREE:       ub->setCode("3");      ub->setColor("\x1b[91m"); break;
-                                                            case FieldType::FOUR:        ub->setCode("4");      ub->setColor("\x1b[95m"); break;
-                                                            case FieldType::FIVE:        ub->setCode("5");      ub->setColor("\x1b[93m"); break;
-                                                            default: break;
-                                                        }
-                                                        ub->activated = false;
+                                            if (auto cell = tui.boardCellAt(mx, my)) {
+                                                auto result = game.makeMove(cell->row, cell->column);
+                                                if(result.size() > 0) {
+                                                    if (result.size() == 1 && result.front().cell.fieldType == FieldType::MINE) {
+                                                        result = game.revealAll();
+                                                        game_lost = true;
                                                     }
                                                 }
                                             }
                                         } else {
-                                            std::optional<Playerield> field = game.toggleFlag(static_cast<size_t>(b->getX()), static_cast<size_t>(b->getY()));
-                                            if (field) {
-                                                UnicodeButton* ub = dynamic_cast<UnicodeButton*>(b.get());
-                                                if (ub) {
-                                                    if (field->flagged) {
-                                                        ub->setCode("\u2691");
-                                                        ub->setColor("\x1b[93m");
-                                                    } else {
-                                                        ub->setCode("\u25A2");
-                                                        ub->setColor("\x1b[97m");
-                                                    }
-                                                }
+                                            if (auto cell = tui.boardCellAt(mx, my)) {
+                                                game.toggleFlag(cell->row, cell->column);
                                             }
                                         }
                                     }

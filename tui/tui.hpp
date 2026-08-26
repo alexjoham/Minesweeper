@@ -1,17 +1,26 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include "../structs/board_coord.hpp"
 #include "../game/game.hpp"
 #include "../helpers.hpp"
 
 class Tui {
+    private:
+        static constexpr int kCellWidth = 3;
+        int origin_row_;
+        int origin_col_;
+
     public:
+        Tui(int origin_row, int origin_col) noexcept
+            : origin_row_(origin_row), origin_col_(origin_col) {}
         /**
          * @return height of the field
          */
         int drawGame(int x, int y, const Game::Board& board);
 
         static std::string_view glyph(const Playerield& c) {
+            if (c.hidden && c.flagged) return "\u2691";
             switch (c.fieldType) {
                 case FieldType::HIDDEN:     return "\u25A2";
                 case FieldType::MINE:       return "★";
@@ -29,6 +38,7 @@ class Tui {
         }
         
         static std::string_view colour(const Playerield& c) {
+            if (c.hidden && c.flagged) return "\x1b[93m";
             switch (c.fieldType) {
                 case FieldType::HIDDEN:     return "\x1b[97m";
                 case FieldType::MINE:       return "\x1b[91m";
@@ -43,5 +53,15 @@ class Tui {
                 case FieldType::EIGHT:      return "\x1b[37m";
                 default: return "";
             }
+        }
+
+        std::optional<BoardCoord> boardCellAt(int screen_row, int screen_col) const {
+            const int r = screen_row - origin_row_ - 1;
+            const int c = (screen_col - origin_col_ - 1) / kCellWidth;
+            if (r < 0 || c < 0) return std::nullopt;
+            size_t row = static_cast<size_t>(r);
+            size_t column = static_cast<size_t>(c);
+            if (row >= Game::kFieldSize || column >= Game::kFieldSize) return std::nullopt;
+            return BoardCoord{row, column};
         }
 };
