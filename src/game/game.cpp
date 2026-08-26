@@ -3,7 +3,7 @@
 #include <ctime>
 #include <algorithm>
 #include <vector>
-#include "helpers.hpp"
+#include "../helpers.hpp"
 #include <queue>
 
 void Game::generateRandomField() {

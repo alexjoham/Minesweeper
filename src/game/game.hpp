@@ -24,8 +24,6 @@ class Game {
         const int NUM_MINES = 10;
         using Board = std::array<std::array<Playerield, kFieldSize>, kFieldSize>;
 
-        size_t getFieldSize() const { return kFieldSize; }
-
         void startGame();
 
         std::vector<RevealedCell> revealAll();
