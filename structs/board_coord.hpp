@@ -1,5 +1,5 @@
 #pragma once
-#include <memory>
+#include <cstddef>
 
 struct BoardCoord {
     std::size_t row;

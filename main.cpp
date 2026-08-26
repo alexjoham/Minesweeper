@@ -22,7 +22,6 @@ static bool g_raw_active = false;
 GameState state = GameState::MENU;
 Game game;
 Tui tui = Tui(PLAYING_FIELD_X, PLAYING_FIELD_Y);
-std::vector<std::unique_ptr<Button>> game_buttons;
 static bool set_flag = false;
 UnicodeButton flag_button = UnicodeButton(1, 3, 3, "\u2691", "\x1b[93m");
 
@@ -75,16 +74,6 @@ static void draw_all(std::vector<std::unique_ptr<Button>> &buttons) {
     for (const auto &b : buttons) b->draw();
 }
 
-static void init_game() {
-    game.startGame();
-    for (size_t i = 0; i < game.getFieldSize(); i++) {
-        for (size_t j = 0; j < game.getFieldSize(); j++) {
-            auto b = std::make_unique<UnicodeButton>(PLAYING_FIELD_X + i + 1, PLAYING_FIELD_Y + j * 3 + 1, 3, "\u25A2", "\x1b[97m");
-            game_buttons.push_back(std::move(b));
-        }
-    }
-}
-
 static void drawGameInfo() {
     flag_button.draw();
     emit_terminal_command(at(0, 7) + "\x1b[2mPress q to quit.\x1b[0m");
@@ -126,7 +115,7 @@ int main() {
 
         if (buf.size() == 1 && c != '\x1b') {
             if (c == 'q' || c == 3 /* Ctrl+C */) running = false;
-            if (c == 'r') { state = GameState::GAME; init_game(); clear_screen(); buttons = std::move(game_buttons); drawGameInfo(); tui.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, game.getPlayerfield()); continue; }
+            if (c == 'r') { state = GameState::GAME; game.startGame(); clear_screen(); drawGameInfo(); tui.drawGame(game.getPlayerfield()); buf.clear(); continue; }
             buf.clear();
             continue;
         }
@@ -165,11 +154,10 @@ int main() {
                                 if (quit_clicked) { running = false; buf.clear(); continue; }
                                 if (switch_to_game) {
                                     state = GameState::GAME; 
-                                    init_game(); 
-                                    clear_screen(); 
-                                    buttons = std::move(game_buttons); 
+                                    game.startGame();
+                                    clear_screen();
                                     drawGameInfo(); 
-                                    int height = tui.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, game.getPlayerfield());
+                                    int height = tui.drawGame(game.getPlayerfield());
                                     drawGameRules(PLAYING_FIELD_X+height, PLAYING_FIELD_Y); continue;
                                 }
                                 draw_all(buttons);
@@ -184,53 +172,49 @@ int main() {
                                         flag_button.setColor("\x1b[93m");
                                     }
                                     drawGameInfo();
-                                    tui.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, game.getPlayerfield());
+                                    tui.drawGame(game.getPlayerfield());
                                     continue;
                                 }
                                 bool game_lost = false;
-                                for (auto &b : buttons) {
-                                    if (b->release(mx, my)) {
-                                        if (!set_flag) {
-                                            if (auto cell = tui.boardCellAt(mx, my)) {
-                                                auto result = game.makeMove(cell->row, cell->column);
-                                                if(result.size() > 0) {
-                                                    if (result.size() == 1 && result.front().cell.fieldType == FieldType::MINE) {
-                                                        result = game.revealAll();
-                                                        game_lost = true;
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            if (auto cell = tui.boardCellAt(mx, my)) {
-                                                game.toggleFlag(cell->row, cell->column);
+                                if (!set_flag) {
+                                    if (auto cell = tui.boardCellAt(mx, my)) {
+                                        auto result = game.makeMove(cell->row, cell->column);
+                                        if(result.size() > 0) {
+                                            if (result.size() == 1 && result.front().cell.fieldType == FieldType::MINE) {
+                                                result = game.revealAll();
+                                                game_lost = true;
                                             }
                                         }
+                                    }
+                                } else {
+                                    if (auto cell = tui.boardCellAt(mx, my)) {
+                                        game.toggleFlag(cell->row, cell->column);
                                     }
                                 }
                                 if (game_lost) {
                                     state = GameState::LOST;
                                     drawGameLost();
-                                    tui.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, game.getPlayerfield());
+                                    tui.drawGame(game.getPlayerfield());
                                     continue;
                                 } else if (game.game_won()) {
                                     game.revealAll();
                                     drawGameWon();
-                                    tui.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, game.getPlayerfield());
+                                    tui.drawGame(game.getPlayerfield());
                                     state = GameState::WON;
                                     continue;
                                 }
                                 drawGameInfo();
-                                int height = tui.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, game.getPlayerfield());
+                                int height = tui.drawGame(game.getPlayerfield());
                                 drawGameRules(PLAYING_FIELD_X+height, PLAYING_FIELD_Y);
                                 break;
                             }
                             case GameState::LOST:
                                 drawGameLost();
-                                tui.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, game.getPlayerfield());
+                                tui.drawGame(game.getPlayerfield());
                                 break;
                             case GameState::WON:
                                 drawGameWon();
-                                tui.drawGame(PLAYING_FIELD_X, PLAYING_FIELD_Y, game.getPlayerfield());
+                                tui.drawGame(game.getPlayerfield());
                                 break;
                             default:
                             break;

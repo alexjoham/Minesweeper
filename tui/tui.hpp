@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include <optional>
+#include <string_view>
 #include "../structs/board_coord.hpp"
 #include "../game/game.hpp"
 #include "../helpers.hpp"
@@ -17,7 +19,7 @@ class Tui {
         /**
          * @return height of the field
          */
-        int drawGame(int x, int y, const Game::Board& board);
+        int drawGame(const Game::Board& board);
 
         static std::string_view glyph(const Playerield& c) {
             if (c.hidden && c.flagged) return "\u2691";
@@ -57,10 +59,11 @@ class Tui {
 
         std::optional<BoardCoord> boardCellAt(int screen_row, int screen_col) const {
             const int r = screen_row - origin_row_ - 1;
-            const int c = (screen_col - origin_col_ - 1) / kCellWidth;
+            const int c = screen_col - origin_col_ - 1;
             if (r < 0 || c < 0) return std::nullopt;
+
             size_t row = static_cast<size_t>(r);
-            size_t column = static_cast<size_t>(c);
+            size_t column = static_cast<size_t>(c / kCellWidth);
             if (row >= Game::kFieldSize || column >= Game::kFieldSize) return std::nullopt;
             return BoardCoord{row, column};
         }
