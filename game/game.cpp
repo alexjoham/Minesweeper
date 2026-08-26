@@ -14,138 +14,104 @@ void Game::generateRandomField() {
 
     // Fill the filed with mines
     for (int i = 0; i < NUM_MINES; i++) {
-        const int j = (rand()%(FIELD_SIZE*FIELD_SIZE));
+        const size_t j = (static_cast<size_t>(rand())%(kFieldSize*kFieldSize));
         bool in_array = std::find(mines.begin(), mines.end(), j) != mines.end();
         if (in_array) {
             i -= 1;
             continue;
         } else {
             mines.emplace_back(j);
-            int row = j / FIELD_SIZE;
-            int column = j % FIELD_SIZE;
-            minefield[row][column] = -1;
+            size_t row = j / kFieldSize;
+            size_t column = j % kFieldSize;
+            minefield_[row][column] = -1;
         }
     }
     
     // Set the number of mines nearby
-    for (int i = 0; i < FIELD_SIZE; i++) {
-        for(int j = 0; j < FIELD_SIZE; j++) {
-            if (minefield[i][j] == -1) {
+    for (size_t i = 0; i < kFieldSize; i++) {
+        for(size_t j = 0; j < kFieldSize; j++) {
+            if (minefield_[i][j] == -1) {
                 updateFieldsAroundmine(i, j);
             }
         }
     }
 }
 
-void Game::updateFieldsAroundmine(int row, int column) {
-    int r_start = row - 1 < 0 ? 0 : row - 1;
-    int r_end = row + 1 >= FIELD_SIZE ? FIELD_SIZE - 1 : row + 1;
-    int c_start = column - 1 < 0 ? 0 : column - 1;
-    int c_end = column + 1 >= FIELD_SIZE ? FIELD_SIZE - 1 : column + 1;
+void Game::updateFieldsAroundmine(size_t row, size_t column) {
+    size_t r_start = row > 0 ? row - 1 : 0;
+    size_t r_end = row + 1 >= kFieldSize ? kFieldSize - 1 : row + 1;
+    size_t c_start = column > 0 ? column - 1 : 0;
+    size_t c_end = column + 1 >= kFieldSize ? kFieldSize - 1 : column + 1;
 
-    for(int i = r_start; i <= r_end; i++) {
-        for(int j = c_start; j <= c_end; j++) {
+    for(size_t i = r_start; i <= r_end; i++) {
+        for(size_t j = c_start; j <= c_end; j++) {
             if (row == i && column == j) continue; // mine that we update around
-            if (minefield[i][j] == -1) continue; // mine itself, do not update!
-            minefield[i][j] += 1;
+            if (minefield_[i][j] == -1) continue; // mine itself, do not update!
+            minefield_[i][j] += 1;
         }
     }
 }
 
 void Game::startGame() {
-    for(auto &row : minefield) std::fill(std::begin(row), std::end(row), 0);
-    for(auto &row : playerfield) std::fill(std::begin(row), std::end(row), Playerield{});
+    for(auto &row : minefield_) std::fill(std::begin(row), std::end(row), 0);
+    for(auto &row : playerfield_) std::fill(std::begin(row), std::end(row), Playerield{});
     generateRandomField();
 }
 
-int Game::drawGame(int x, int y, std::vector<std::unique_ptr<Button>> &buttons) {
-    emit_terminal_command(at(x, y) + "\u250C");
-    for (int i = 1; i < 3*FIELD_SIZE; i+=3) {
-        emit_terminal_command(at(x, y+i) + "\u2500");
-        emit_terminal_command(at(x, y+i+1) + "\u2500");
-        emit_terminal_command(at(x, y+i+2) + "\u2500");
+std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
+    std::vector<RevealedCell> revealedButtons;
+    if (row >= kFieldSize || column >= kFieldSize) {
+        return revealedButtons;
     }
-    emit_terminal_command(at(x, y+3*FIELD_SIZE+1) + "\u2510");
-    for (int i = 1; i <= FIELD_SIZE; i++) {
-        emit_terminal_command(at(x+i, y) + "\u2502");
-        for (int j = 0; j < FIELD_SIZE; j++) {
-            const std::size_t pos = static_cast<std::size_t>((i - 1) * FIELD_SIZE + j);
-            Button& button = *buttons.at(pos);
-            button.draw();
+    if(playerfield_[row][column].hidden) {
+        // So it is ignored in the revealAll method
+        playerfield_[row][column].hidden = false;
+        playerfield_[row][column].fieldType = getFieldType(row, column);
+        if (playerfield_[row][column].fieldType == FieldType::MINE) {
+            revealedButtons.push_back(RevealedCell{row, column, playerfield_[row][column]});
+            playerfield_[row][column].hidden = true; // Will be revealed later
+            return revealedButtons;
         }
-        emit_terminal_command(at(x+i, y+3*FIELD_SIZE+1) + "\u2502");
-    }
-    emit_terminal_command(at(x+FIELD_SIZE+1, y) + "\u2514");
-    for (int i = 1; i < 3*FIELD_SIZE; i+=3) {
-        emit_terminal_command(at(x+FIELD_SIZE+1, y+i) + "\u2500");
-        emit_terminal_command(at(x+FIELD_SIZE+1, y+i+1) + "\u2500");
-        emit_terminal_command(at(x+FIELD_SIZE+1, y+i+2) + "\u2500");
-    }
-    emit_terminal_command(at(x+FIELD_SIZE+1, y+3*FIELD_SIZE+1) + "\u2518");
-    return FIELD_SIZE+2;
-}
-
-std::vector<Playerield> Game::makeMove(int buttonID) {
-    std::vector<Playerield> revealedButtons;
-    for (int i = 0; i < FIELD_SIZE; i++) {
-        for(int j = 0; j < FIELD_SIZE; j++) {
-            if(playerfield[i][j].buttonID == buttonID) {
-                if(playerfield[i][j].hidden) {
-                    // So it is ignored in the revealAll method
-                    playerfield[i][j].hidden = false;
-                    playerfield[i][j].fieldType = getFieldType(i, j);
-                    if (playerfield[i][j].fieldType == FieldType::MINE) {
-                        revealedButtons.push_back(playerfield[i][j]);
-                        playerfield[i][j].hidden = true; // Will be revealed later
-                        return revealedButtons;
-                    }
-                    std::vector<Playerield> vector = revealFieldsAroundMove(i, j);
-                    return vector;
-                } else {
-                    return revealedButtons;
-                }
-            }
-        }
+        std::vector<RevealedCell> vector = revealFieldsAroundMove(row, column);
+        return vector;
+    } else {
+        return revealedButtons;
     }
     return revealedButtons;
 }
 
-std::vector<Playerield> Game::revealFieldsAroundMove(int row, int column) {
-    std::vector<Playerield> revealedFields;
-    std::queue<Playerield> toProcess;
-    playerfield[row][column].row = row;
-    playerfield[row][column].column = column;
-    toProcess.push(playerfield[row][column]);
-    revealedFields.push_back(playerfield[row][column]);
+std::vector<RevealedCell> Game::revealFieldsAroundMove(size_t row, size_t column) {
+    std::vector<RevealedCell> revealedFields;
+    std::queue<RevealedCell> toProcess;
+    toProcess.push(RevealedCell{row, column, playerfield_[row][column]});
+    revealedFields.push_back(RevealedCell{row, column, playerfield_[row][column]});
 
     while(toProcess.size() > 0) {
-        Playerield processed = toProcess.front();
+        RevealedCell processed = toProcess.front();
         toProcess.pop();
-        row = processed.row;
-        column = processed.column;
-        if (processed.hidden) {
+        row = static_cast<size_t>(processed.row);
+        column = static_cast<size_t>(processed.column);
+        if (processed.cell.hidden) {
             FieldType fieldType = getFieldType(row, column);
             if (fieldType == FieldType::MINE) {
                 continue;
             }
-            processed.hidden = false;
-            playerfield[row][column].hidden = false;
-            playerfield[row][column].fieldType = fieldType;
-            revealedFields.push_back(playerfield[row][column]);
+            processed.cell.hidden = false;
+            playerfield_[row][column].hidden = false;
+            playerfield_[row][column].fieldType = fieldType;
+            revealedFields.push_back(RevealedCell{row, column, playerfield_[row][column]});
             if (fieldType == FieldType::ONE || fieldType == FieldType::TWO || fieldType == FieldType::THREE || fieldType == FieldType::FOUR || fieldType == FieldType::FIVE) {
                 continue;
             }
         }
-        int r_start = row - 1 < 0 ? 0 : row - 1;
-        int r_end = row + 1 >= FIELD_SIZE ? FIELD_SIZE - 1 : row + 1;
-        int c_start = column - 1 < 0 ? 0 : column - 1;
-        int c_end = column + 1 >= FIELD_SIZE ? FIELD_SIZE - 1 : column + 1;
-        for(int i = r_start; i <= r_end; i++) {
-            for(int j = c_start; j <= c_end; j++) {
-                if (playerfield[i][j].hidden) {
-                    playerfield[i][j].row = i;
-                    playerfield[i][j].column = j;
-                    toProcess.push(playerfield[i][j]);
+        size_t r_start = row > 0 ? row - 1 : 0;
+        size_t r_end = row + 1 >= kFieldSize ? kFieldSize - 1 : row + 1;
+        size_t c_start = column > 0 ? column - 1 : 0;
+        size_t c_end = column + 1 >= kFieldSize ? kFieldSize - 1 : column + 1;
+        for(size_t i = r_start; i <= r_end; i++) {
+            for(size_t j = c_start; j <= c_end; j++) {
+                if (playerfield_[i][j].hidden) {
+                    toProcess.push(RevealedCell{i, j, playerfield_[i][j]});
                 }
             }
         }
@@ -156,14 +122,14 @@ std::vector<Playerield> Game::revealFieldsAroundMove(int row, int column) {
     return revealedFields;
 }
 
-std::vector<Playerield> Game::revealAll() {
-    std::vector<Playerield> revealedButtons;
-    for (int i = 0; i < FIELD_SIZE; i++) {
-        for(int j = 0; j < FIELD_SIZE; j++) {
-            if(playerfield[i][j].hidden) {
-                playerfield[i][j].hidden = false;
-                playerfield[i][j].fieldType = getFieldType(i, j);
-                revealedButtons.push_back(playerfield[i][j]);
+std::vector<RevealedCell> Game::revealAll() {
+    std::vector<RevealedCell> revealedButtons;
+    for (size_t i = 0; i < kFieldSize; i++) {
+        for(size_t j = 0; j < kFieldSize; j++) {
+            if(playerfield_[i][j].hidden) {
+                playerfield_[i][j].hidden = false;
+                playerfield_[i][j].fieldType = getFieldType(i, j);
+                revealedButtons.push_back(RevealedCell{i, j, playerfield_[i][j]});
             }
         }
     }
@@ -171,9 +137,9 @@ std::vector<Playerield> Game::revealAll() {
 }
 
 bool Game::game_won() {
-    for (int i = 0; i < FIELD_SIZE; i++) {
-        for(int j = 0; j < FIELD_SIZE; j++) {
-            if(playerfield[i][j].hidden) {
+    for (size_t i = 0; i < kFieldSize; i++) {
+        for(size_t j = 0; j < kFieldSize; j++) {
+            if(playerfield_[i][j].hidden) {
                 if(getFieldType(i, j) != FieldType::MINE) return false;
             }
         }

@@ -8,5 +8,8 @@ enum class FieldType {
     TWO,
     THREE,
     FOUR,
-    FIVE
+    FIVE,
+    SIX,
+    SEVEN,
+    EIGHT
 };

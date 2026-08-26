@@ -5,6 +5,7 @@ add_executable(minesweeper
     main.cpp
     game/game.cpp
     button/button.cpp
+    tui/tui.cpp
 )
 
 set_target_properties(minesweeper PROPERTIES

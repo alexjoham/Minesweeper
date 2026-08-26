@@ -23,6 +23,14 @@ class Button {
             return id;
         }
 
+        int getX() const {
+            return x_;
+        }
+
+        int getY() const {
+            return y_;
+        }
+
         bool contains(int cx, int cy) const {
             return cx == x_ && cy >= y_ && cy < y_ + w_;
         }
