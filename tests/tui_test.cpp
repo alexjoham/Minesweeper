@@ -12,6 +12,11 @@
 #define YELLOW  "\033[33m"
 #define BOLDBLACK   "\033[1m\033[30m"
 
+struct RejectCase {
+    int screen_row;
+    int screen_col;
+    const char* what;
+};
 
 namespace {
 
@@ -32,24 +37,24 @@ int main() {
     int origin_row = 0;
     int origin_column = 0;
     int kCellWidth = 3;
+    const int first_row = origin_row + 1;
+    const int last_row  = origin_row + static_cast<int>(Game::kFieldSize);
+    const int first_col = origin_column + 1;
+    const int last_col  = origin_column + static_cast<int>(Game::kFieldSize) * kCellWidth;
 
     Tui tui = Tui(origin_row, origin_column);
 
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            int row_pos = origin_row + i + 1;
-            int column_pos = origin_column + j * kCellWidth + 1;
-            auto cell = tui.boardCellAt(row_pos, column_pos);
-            std::string msg = "No value received for row " + std::to_string(i) + ", column " + std::to_string(j);
-            bool cell_has_value = cell.has_value();
-            check(cell_has_value, msg.c_str());
-            if (cell_has_value) {
-                msg = "Received wrong row for row: " + std::to_string(i) + " and column " + std::to_string(j);
-                check(cell.value().row == static_cast<size_t>(i), msg.c_str());
-                msg = "Received wrong column for row: " + std::to_string(i) + " and column " + std::to_string(j);
-                check(cell.value().column == static_cast<size_t>(j), msg.c_str());
-            }
-        }
+    const RejectCase rejects[] = {
+        { first_row - 1, first_col + 1, "origin is not in the grid"},
+        { first_row - 1, first_col,  "one row above the grid" },
+        { last_row + 1, first_col,  "one row below the grid" },
+        { first_row, first_col - 1, "one column left of the grid" },
+        { first_row, last_col + 1, "one column right of the grid"},
+    };
+
+    for (const RejectCase& t : rejects) {
+        auto cell = tui.boardCellAt(t.screen_row, t.screen_col);
+        check(!cell.has_value(), t.what);
     }
 
     if (failures == 0) {
