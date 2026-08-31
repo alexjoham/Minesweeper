@@ -9,8 +9,6 @@
 constexpr std::string_view RESET = "\033[0m";
 constexpr std::string_view RED = "\033[31m";
 constexpr std::string_view GREEN = "\033[32m";
-constexpr std::string_view YELLOW = "\033[33m";
-constexpr std::string_view BOLDBLACK = "\033[1m\033[30m";
 
 namespace {
 
