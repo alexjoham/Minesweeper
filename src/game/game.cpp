@@ -1,43 +1,19 @@
 #include "game.hpp"
-#include <cstdlib> 
-#include <ctime>
-#include <algorithm>
 #include <vector>
 #include "../helpers.hpp"
 #include <queue>
 
-void Game::generateRandomField() {
-    static bool seeded = false;
-    if (!seeded) { srand((unsigned)time(0)); seeded = true; }
-
-    std::vector<int> mines;
-
-    // Fill the filed with mines
-    for (int i = 0; i < NUM_MINES; i++) {
-        const size_t j = (static_cast<size_t>(rand())%(kFieldSize*kFieldSize));
-        bool in_array = std::find(mines.begin(), mines.end(), j) != mines.end();
-        if (in_array) {
-            i -= 1;
-            continue;
-        } else {
-            mines.emplace_back(j);
-            size_t row = j / kFieldSize;
-            size_t column = j % kFieldSize;
-            minefield_[row][column] = -1;
-        }
-    }
-    
-    // Set the number of mines nearby
+void Game::updateNearbyMineNumbers() {
     for (size_t i = 0; i < kFieldSize; i++) {
         for(size_t j = 0; j < kFieldSize; j++) {
             if (minefield_[i][j] == -1) {
-                updateFieldsAroundmine(i, j);
+                updateFieldsAroundMine(i, j);
             }
         }
     }
 }
 
-void Game::updateFieldsAroundmine(size_t row, size_t column) {
+void Game::updateFieldsAroundMine(size_t row, size_t column) {
     size_t r_start = row > 0 ? row - 1 : 0;
     size_t r_end = row + 1 >= kFieldSize ? kFieldSize - 1 : row + 1;
     size_t c_start = column > 0 ? column - 1 : 0;
@@ -52,10 +28,18 @@ void Game::updateFieldsAroundmine(size_t row, size_t column) {
     }
 }
 
+void Game::createNewGame(const MineLayout& mines) {
+    for (size_t r = 0; r < kFieldSize; ++r) {
+        for (size_t c = 0; c < kFieldSize; ++c) {
+            minefield_[r][c] = mines[r][c] ? -1 : 0;
+        }
+    }
+    playerfield_ = Board{};
+    updateNearbyMineNumbers();
+}
+
 void Game::startGame() {
-    for(auto &row : minefield_) std::fill(std::begin(row), std::end(row), 0);
-    for(auto &row : playerfield_) std::fill(std::begin(row), std::end(row), Playerield{});
-    generateRandomField();
+    createNewGame(randomLayout(NUM_MINES));
 }
 
 std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {

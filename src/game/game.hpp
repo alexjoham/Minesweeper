@@ -2,6 +2,9 @@
 #include <vector>
 #include <array>
 #include <optional>
+#include <cstdlib> 
+#include <ctime>
+#include <algorithm>
 #include "../structs/board_coord.hpp"
 #include "../enums/field_type.hpp"
 
@@ -23,6 +26,8 @@ class Game {
         static constexpr size_t kFieldSize = 9;
         const int NUM_MINES = 10;
         using Board = std::array<std::array<Playerield, kFieldSize>, kFieldSize>;
+
+        using MineLayout = std::array<std::array<bool, kFieldSize>, kFieldSize>;
 
         void startGame();
 
@@ -48,9 +53,35 @@ class Game {
         bool game_won();
     private:
 
-        void generateRandomField();
+        void createNewGame(const MineLayout& mines);
 
-        void updateFieldsAroundmine(size_t row, size_t column);
+        void updateNearbyMineNumbers();
+
+        static MineLayout randomLayout(int mine_count) {
+            MineLayout minefield{};
+            static bool seeded = false;
+            if (!seeded) { srand((unsigned)time(0)); seeded = true; }
+
+            std::vector<int> mines;
+
+            // Fill the filed with mines
+            for (int i = 0; i < mine_count; i++) {
+                const size_t j = (static_cast<size_t>(rand())%(kFieldSize*kFieldSize));
+                bool in_array = std::find(mines.begin(), mines.end(), j) != mines.end();
+                if (in_array) {
+                    i -= 1;
+                    continue;
+                } else {
+                    mines.emplace_back(j);
+                    size_t row = j / kFieldSize;
+                    size_t column = j % kFieldSize;
+                    minefield[row][column] = true;
+                }
+            }
+            return minefield;
+        }
+
+        void updateFieldsAroundMine(size_t row, size_t column);
 
         std::vector<RevealedCell> revealFieldsAroundMove(size_t row, size_t column);
 
