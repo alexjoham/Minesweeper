@@ -42,7 +42,7 @@ void Game::createNewGame(const MineLayout& mines) {
 }
 
 void Game::startGame() {
-    createNewGame(randomLayout(NUM_MINES, kFieldSize));
+    createNewGame(randomLayout(NUM_MINES));
 }
 
 std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
@@ -134,9 +134,9 @@ bool Game::game_won() {
     return true;
 }
 
-Game::MineLayout Game::randomLayout(int mine_count, size_t field_size) {
+Game::MineLayout Game::randomLayout(int mine_count) {
     Game::MineLayout minefield{};
-    if (field_size <= 0) {
+    if (kFieldSize <= 0) {
         return minefield;
     }
     static bool seeded = false;
@@ -146,15 +146,15 @@ Game::MineLayout Game::randomLayout(int mine_count, size_t field_size) {
 
     // Fill the filed with mines
     for (int i = 0; i < mine_count; i++) {
-        const size_t j = (static_cast<size_t>(rand())%(field_size*field_size));
+        const size_t j = (static_cast<size_t>(rand())%(kFieldSize*kFieldSize));
         bool in_array = std::find(mines.begin(), mines.end(), j) != mines.end();
         if (in_array) {
             i -= 1;
             continue;
         } else {
             mines.emplace_back(j);
-            size_t row = j / field_size;
-            size_t column = j % field_size;
+            size_t row = j / kFieldSize;
+            size_t column = j % kFieldSize;
             minefield[row][column] = true;
         }
     }

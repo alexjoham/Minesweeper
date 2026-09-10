@@ -54,7 +54,7 @@ class Game {
 
         void updateNearbyMineNumbers();
 
-        static MineLayout randomLayout(int mine_count, size_t field_size);
+        static MineLayout randomLayout(int mine_count);
 
         void updateFieldsAroundMine(size_t row, size_t column);
 
