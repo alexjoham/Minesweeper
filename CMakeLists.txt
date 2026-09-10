@@ -20,6 +20,10 @@ target_link_libraries(ms_core PRIVATE ms_warnings)
 add_executable(minesweeper src/main.cpp)
 target_link_libraries(minesweeper PRIVATE ms_core ms_warnings)
 
+add_executable(game_test tests/game_test.cpp)
+target_link_libraries(game_test PRIVATE ms_core ms_warnings)
+add_test(NAME game_test COMMAND game_test)
+
 set_target_properties(minesweeper PROPERTIES
     EXPORT_COMPILE_COMMANDS ON
     CXX_EXTENSIONS OFF
