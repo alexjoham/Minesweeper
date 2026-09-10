@@ -42,7 +42,7 @@ void Game::createNewGame(const MineLayout& mines) {
 }
 
 void Game::startGame() {
-    createNewGame(randomLayout(NUM_MINES));
+    createNewGame(randomLayout(kNumMines));
 }
 
 std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {

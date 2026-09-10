@@ -29,3 +29,7 @@ enable_testing()
 add_executable(tui_test tests/tui_test.cpp)
 target_link_libraries(tui_test PRIVATE ms_core ms_warnings)
 add_test(NAME tui_test COMMAND tui_test)
+
+add_executable(game_test tests/game_test.cpp)
+target_link_libraries(game_test PRIVATE ms_core ms_warnings)
+add_test(NAME game_test COMMAND game_test)

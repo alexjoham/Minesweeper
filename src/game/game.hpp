@@ -21,7 +21,7 @@ struct RevealedCell {
 class Game {
     public:
         static constexpr size_t kFieldSize = 9;
-        const int NUM_MINES = 10;
+
         using Board = std::array<std::array<Playerield, kFieldSize>, kFieldSize>;
 
         using MineLayout = std::array<std::array<bool, kFieldSize>, kFieldSize>;
@@ -49,7 +49,8 @@ class Game {
 
         bool game_won();
     private:
-
+        static constexpr int kNumMines = 10;
+        
         void createNewGame(const MineLayout& mines);
 
         void updateNearbyMineNumbers();
