@@ -160,3 +160,7 @@ Game::MineLayout Game::randomLayout(int mine_count) {
     }
     return minefield;
 }
+
+Game::Game(const MineLayout& mines) {
+    createNewGame(mines);
+}

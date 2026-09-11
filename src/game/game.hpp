@@ -48,9 +48,13 @@ class Game {
         }
 
         bool game_won();
+
+        explicit Game(const MineLayout& mines);
+
+        Game() = default;
     private:
         static constexpr int kNumMines = 10;
-        
+
         void createNewGame(const MineLayout& mines);
 
         void updateNearbyMineNumbers();
