@@ -26,7 +26,7 @@ class Game {
 
         using MineLayout = std::array<std::array<bool, kFieldSize>, kFieldSize>;
 
-        void startGame();
+        void restart();
 
         std::vector<RevealedCell> revealAll();
 
@@ -51,7 +51,7 @@ class Game {
 
         explicit Game(const MineLayout& mines);
 
-        Game() = default;
+        Game() : Game(randomLayout(kFieldSize)) {};
     private:
         static constexpr int kNumMines = 10;
 

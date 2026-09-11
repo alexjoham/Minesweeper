@@ -41,7 +41,7 @@ void Game::createNewGame(const MineLayout& mines) {
     updateNearbyMineNumbers();
 }
 
-void Game::startGame() {
+void Game::restart() {
     createNewGame(randomLayout(kNumMines));
 }
 

@@ -115,7 +115,7 @@ int main() {
 
         if (buf.size() == 1 && c != '\x1b') {
             if (c == 'q' || c == 3 /* Ctrl+C */) running = false;
-            if (c == 'r') { state = GameState::GAME; game.startGame(); clear_screen(); drawGameInfo(); tui.drawGame(game.getPlayerfield()); buf.clear(); continue; }
+            if (c == 'r') { state = GameState::GAME; game.restart(); clear_screen(); drawGameInfo(); tui.drawGame(game.getPlayerfield()); buf.clear(); continue; }
             buf.clear();
             continue;
         }
@@ -153,8 +153,7 @@ int main() {
                                 }
                                 if (quit_clicked) { running = false; buf.clear(); continue; }
                                 if (switch_to_game) {
-                                    state = GameState::GAME; 
-                                    game.startGame();
+                                    state = GameState::GAME;
                                     clear_screen();
                                     drawGameInfo(); 
                                     int height = tui.drawGame(game.getPlayerfield());
