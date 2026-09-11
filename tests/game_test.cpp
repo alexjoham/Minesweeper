@@ -49,6 +49,9 @@ namespace {
                 match = false;
                 break;
             }
+            if (match == false) {
+                break;
+            }
         }
         check(match, acc_case.what);
     }
@@ -108,7 +111,6 @@ int main() {
         std::printf("%sall checks passed%s\n", GREEN.data(), RESET.data());
         return 0;
     }
-    std::string text = std::string(RED) + std::to_string(failures) + " check(s) failed" + std::string(RESET) + "\n";
     std::printf("%s %d %s\n", RED.data(), failures, RESET.data());
     return 1;
 }

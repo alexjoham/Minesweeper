@@ -51,7 +51,7 @@ class Game {
 
         explicit Game(const MineLayout& mines);
 
-        Game() : Game(randomLayout(kFieldSize)) {};
+        Game() : Game(randomLayout(kNumMines)) {};
     private:
         static constexpr int kNumMines = 10;
 
