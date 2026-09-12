@@ -50,7 +50,7 @@ std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
     if (row >= kFieldSize || column >= kFieldSize) {
         return revealedButtons;
     }
-    if(playerfield_[row][column].hidden) {
+    if(playerfield_[row][column].hidden && !playerfield_[row][column].flagged) {
         // So it is ignored in the revealAll method
         playerfield_[row][column].hidden = false;
         FieldType fieldType = getFieldType(row, column);
