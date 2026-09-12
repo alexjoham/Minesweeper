@@ -104,7 +104,7 @@ std::vector<RevealedCell> Game::revealFieldsAroundMove(size_t row, size_t column
         size_t c_end = column + 1 >= kFieldSize ? kFieldSize - 1 : column + 1;
         for(size_t i = r_start; i <= r_end; i++) {
             for(size_t j = c_start; j <= c_end; j++) {
-                if (playerfield_[i][j].hidden && !visited[i][j]) {
+                if (playerfield_[i][j].hidden && !visited[i][j] && !playerfield_[i][j].flagged) {
                     toProcess.push(BoardCoord{i, j});
                 }
             }
