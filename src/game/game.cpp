@@ -59,7 +59,7 @@ std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
             revealedButtons.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
             playerfield_[row][column].hidden = true; // Will be revealed later
             return revealedButtons;
-        } else if (fieldType == FieldType::ONE || fieldType == FieldType::TWO || fieldType == FieldType::THREE || fieldType == FieldType::FOUR || fieldType == FieldType::FIVE || fieldType == FieldType::SIX || fieldType == FieldType::SEVEN || fieldType == FieldType::EIGHT) {
+        } else if (fieldType != FieldType::NEUTRAL) {
             revealedButtons.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
             return revealedButtons;
         }
@@ -91,7 +91,7 @@ std::vector<RevealedCell> Game::revealFieldsAroundMove(size_t row, size_t column
             playerfield_[row][column].hidden = false;
             playerfield_[row][column].fieldType = fieldType;
             revealedFields.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
-            if (fieldType == FieldType::ONE || fieldType == FieldType::TWO || fieldType == FieldType::THREE || fieldType == FieldType::FOUR || fieldType == FieldType::FIVE) {
+            if (fieldType != FieldType::NEUTRAL) {
                 continue;
             }
         }
