@@ -73,21 +73,24 @@ std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
 
 std::vector<RevealedCell> Game::revealFieldsAroundMove(size_t row, size_t column) {
     std::vector<RevealedCell> revealedFields;
-    std::queue<RevealedCell> toProcess;
-    toProcess.push(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
+    std::queue<BoardCoord> toProcess;
+    std::array<std::array<bool, kFieldSize>, kFieldSize> visited{};
+    toProcess.push(BoardCoord{row, column});
     revealedFields.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
+    //visited[row][column] = true;
 
     while(toProcess.size() > 0) {
-        RevealedCell processed = toProcess.front();
+        BoardCoord processed = toProcess.front();
         toProcess.pop();
-        row = static_cast<size_t>(processed.coordinates.row);
-        column = static_cast<size_t>(processed.coordinates.column);
-        if (processed.cell.hidden) {
+        row = static_cast<size_t>(processed.row);
+        column = static_cast<size_t>(processed.column);
+        if (visited[row][column]) continue;
+        visited[processed.row][processed.column] = true;
+        if (playerfield_[row][column].hidden) {
             FieldType fieldType = getFieldType(row, column);
             if (fieldType == FieldType::MINE) {
                 continue;
             }
-            processed.cell.hidden = false;
             playerfield_[row][column].hidden = false;
             playerfield_[row][column].fieldType = fieldType;
             revealedFields.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
@@ -101,8 +104,8 @@ std::vector<RevealedCell> Game::revealFieldsAroundMove(size_t row, size_t column
         size_t c_end = column + 1 >= kFieldSize ? kFieldSize - 1 : column + 1;
         for(size_t i = r_start; i <= r_end; i++) {
             for(size_t j = c_start; j <= c_end; j++) {
-                if (playerfield_[i][j].hidden) {
-                    toProcess.push(RevealedCell{BoardCoord{i, j}, playerfield_[i][j]});
+                if (playerfield_[i][j].hidden && !visited[i][j]) {
+                    toProcess.push(BoardCoord{i, j});
                 }
             }
         }
