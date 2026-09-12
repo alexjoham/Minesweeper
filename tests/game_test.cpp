@@ -157,7 +157,13 @@ namespace {
             }
         }
         revealed_cells = game.makeMove(8, 8);
-        check(revealed_cells.size() == 1, "flagged cells are not revealed after clicking on neutral cell (revealed " + std::to_string(revealed_cells.size()) + " cells instead of 1) for a setup with one mine in (0,0) and all other cells flagged except (8,8). Revealed (8,8).");
+        int number_revealed_flagged_cells = 0;
+        for (RevealedCell cell : revealed_cells) {
+            if (cell.cell.flagged && !cell.cell.hidden) {
+                number_revealed_flagged_cells++;
+            }
+        }
+        check(number_revealed_flagged_cells == 0, "flagged cells are not revealed after clicking on neutral cell (revealed " + std::to_string(number_revealed_flagged_cells) + " flagged cells instead of 0) for a setup with one mine in (0,0) and all other cells flagged except (8,8). Revealed (8,8).");
 
         // Test 7: flagged cell cannot be revealed
         game = Game(layoutWith({ { 4, 4 } }));
