@@ -53,10 +53,14 @@ std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
     if(playerfield_[row][column].hidden) {
         // So it is ignored in the revealAll method
         playerfield_[row][column].hidden = false;
-        playerfield_[row][column].fieldType = getFieldType(row, column);
-        if (playerfield_[row][column].fieldType == FieldType::MINE) {
+        FieldType fieldType = getFieldType(row, column);
+        playerfield_[row][column].fieldType = fieldType;
+        if (fieldType == FieldType::MINE) {
             revealedButtons.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
             playerfield_[row][column].hidden = true; // Will be revealed later
+            return revealedButtons;
+        } else if (fieldType == FieldType::ONE || fieldType == FieldType::TWO || fieldType == FieldType::THREE || fieldType == FieldType::FOUR || fieldType == FieldType::FIVE || fieldType == FieldType::SIX || fieldType == FieldType::SEVEN || fieldType == FieldType::EIGHT) {
+            revealedButtons.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
             return revealedButtons;
         }
         std::vector<RevealedCell> vector = revealFieldsAroundMove(row, column);
