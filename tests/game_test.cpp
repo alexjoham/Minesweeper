@@ -100,6 +100,19 @@ namespace {
         
         checkAcceptCase(acc_case_1);
         checkAcceptCase(acc_case_2);
+
+        Game game = Game();
+        game.revealAll();
+        Game::Board board = game.getPlayerfield();
+        int rem_mines = 10;
+        for (size_t i = 0; i < game.kFieldSize; i++) {
+            for (size_t j = 0; j < game.kFieldSize; j++) {
+                if (board[i][j].fieldType == FieldType::MINE) {
+                    rem_mines -= 1;
+                }
+            }
+        }
+        check(rem_mines == 0, "Random generated field has 10 mines");
     }
 }
 
