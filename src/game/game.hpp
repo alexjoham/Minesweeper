@@ -21,6 +21,7 @@ struct RevealedCell {
 class Game {
     public:
         static constexpr size_t kFieldSize = 9;
+        static constexpr int kNumMines = 10;
 
         using Board = std::array<std::array<Playerield, kFieldSize>, kFieldSize>;
 
@@ -53,7 +54,6 @@ class Game {
 
         Game() : Game(randomLayout(kNumMines)) {};
     private:
-        static constexpr int kNumMines = 10;
 
         void createNewGame(const MineLayout& mines);
 

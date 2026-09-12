@@ -116,9 +116,9 @@ namespace {
         Game game = Game();
         game.revealAll();
         Game::Board board = game.getPlayerfield();
-        int rem_mines = 10;
-        for (size_t i = 0; i < game.kFieldSize; i++) {
-            for (size_t j = 0; j < game.kFieldSize; j++) {
+        int rem_mines = Game::kNumMines;
+        for (size_t i = 0; i < Game::kFieldSize; i++) {
+            for (size_t j = 0; j < Game::kFieldSize; j++) {
                 if (board[i][j].fieldType == FieldType::MINE) {
                     rem_mines -= 1;
                 }
@@ -148,8 +148,8 @@ namespace {
 
         // Test 6: flagged cells are not revealed
         game = Game(layoutWith({ { 0, 0 } }));
-        for (size_t i = 0; i < game.kFieldSize; i++) {
-            for (size_t j = 0; j < game.kFieldSize; j++) {
+        for (size_t i = 0; i < Game::kFieldSize; i++) {
+            for (size_t j = 0; j < Game::kFieldSize; j++) {
                 if ((i == 0 && j == 0) || (i == 8 && j == 8)) {
                     continue;
                 }
