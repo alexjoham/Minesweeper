@@ -2,11 +2,14 @@
 #include "src/structs/board_coord.hpp"
 
 #include <algorithm>
+#include <cstddef>
+#include <initializer_list>
+#include <iterator>
 #include <set>
 #include <type_traits>
-#include <vector>
 #include <utility>
-#include <initializer_list>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 namespace {
