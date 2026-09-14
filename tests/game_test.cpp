@@ -3,6 +3,10 @@
 
 #include <algorithm>
 #include <set>
+#include <type_traits>
+#include <vector>
+#include <utility>
+#include <initializer_list>
 #include <gtest/gtest.h>
 
 namespace {
