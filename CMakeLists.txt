@@ -25,11 +25,21 @@ set_target_properties(minesweeper PROPERTIES
     CXX_EXTENSIONS OFF
 )
 
-enable_testing()
-add_executable(tui_test tests/tui_test.cpp)
-target_link_libraries(tui_test PRIVATE ms_core ms_warnings)
-add_test(NAME tui_test COMMAND tui_test)
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        v1.18.0
+)
+set(BUILD_GMOCK OFF)
+set(INSTALL_GTEST OFF)
+FetchContent_MakeAvailable(googletest)
 
-add_executable(game_test tests/game_test.cpp)
-target_link_libraries(game_test PRIVATE ms_core ms_warnings)
-add_test(NAME game_test COMMAND game_test)
+enable_testing()
+include(GoogleTest)
+add_executable(ms_tests
+    tests/game_test.cpp
+    tests/tui_test.cpp
+)
+target_link_libraries(ms_tests PRIVATE ms_core ms_warnings GTest::gtest_main)
+gtest_discover_tests(ms_tests)
