@@ -1,6 +1,8 @@
 #include "src/tui/tui.hpp"
 #include "src/structs/board_coord.hpp"
 
+#include <string>
+
 #include <gtest/gtest.h>
 
 using namespace std::string_view_literals;
@@ -24,6 +26,28 @@ struct Origin {
     int row;
     int col;
 };
+
+std::string originName(const testing::TestParamInfo<Origin>& info) {
+    return "Row" + std::to_string(info.param.row) + "Col" + std::to_string(info.param.col);
+}
+
+std::string fieldTypeName(const testing::TestParamInfo<FieldType>& info) {
+    switch (info.param) {
+        case FieldType::HIDDEN:      return "Hidden";
+        case FieldType::NEUTRAL:     return "Neutral";
+        case FieldType::MINE:        return "Mine";
+        case FieldType::MARKED_MINE: return "MarkedMine";
+        case FieldType::ONE:         return "One";
+        case FieldType::TWO:         return "Two";
+        case FieldType::THREE:       return "Three";
+        case FieldType::FOUR:        return "Four";
+        case FieldType::FIVE:        return "Five";
+        case FieldType::SIX:         return "Six";
+        case FieldType::SEVEN:       return "Seven";
+        case FieldType::EIGHT:       return "Eight";
+    }
+    return "Unknown";
+}
 
 class TuiBoardCellAtTest : public testing::TestWithParam<Origin> {};
 
@@ -102,11 +126,13 @@ INSTANTIATE_TEST_SUITE_P(
         FieldType::EIGHT,
         FieldType::NEUTRAL,
         FieldType::MARKED_MINE,
-        FieldType::HIDDEN));
+        FieldType::HIDDEN),
+    fieldTypeName);
 
 INSTANTIATE_TEST_SUITE_P(
     Origins,
     TuiBoardCellAtTest,
-    testing::Values(Origin{0, 0}, Origin{2, 5}));
+    testing::Values(Origin{0, 0}, Origin{2, 5}),
+    originName);
 
 }  // namespace
