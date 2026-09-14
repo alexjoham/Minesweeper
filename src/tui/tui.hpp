@@ -22,7 +22,7 @@ class Tui {
         int drawGame(const Game::Board& board);
 
         static std::string_view glyph(const Playerield& c) {
-            if (c.hidden && c.flagged) return "\u2691";
+            if (c.hidden) return c.flagged ? "\u2691" : "\u25A2";
             switch (c.fieldType) {
                 case FieldType::HIDDEN:     return "\u25A2";
                 case FieldType::MINE:       return "★";
@@ -40,7 +40,7 @@ class Tui {
         }
         
         static std::string_view colour(const Playerield& c) {
-            if (c.hidden && c.flagged) return "\x1b[93m";
+            if (c.hidden) return c.flagged ? "\x1b[93m" : "\x1b[97m";
             switch (c.fieldType) {
                 case FieldType::HIDDEN:     return "\x1b[97m";
                 case FieldType::MINE:       return "\x1b[91m";
