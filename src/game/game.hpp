@@ -50,7 +50,7 @@ public:
 
     explicit Game(const MineLayout& mines);
 
-    Game() : Game(randomLayout<kFieldSize>(kNumMines, defaultRng())) {};
+    Game() : Game(randomLayout<kFieldSize>(kNumMines, defaultRng())) {}
 
 private:
     void createNewGame(const MineLayout& mines);

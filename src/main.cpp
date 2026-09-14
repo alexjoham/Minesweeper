@@ -66,7 +66,7 @@ static void setup_terminal() {
 
     std::atexit(restore_terminal);
     std::signal(SIGTERM, on_signal);
-    std::signal(SIGHUP, on_signal);
+    std::signal(SIGHUP, on_signal); // NOLINT(misc-include-cleaner) -- POSIX macro, not in <csignal>'s ISO C subset
 }
 
 static void draw_all(std::vector<std::unique_ptr<Button>>& buttons) {
@@ -114,6 +114,7 @@ int main() {
 
     while (running) {
         char c;
+        // NOLINTNEXTLINE(misc-include-cleaner) -- ssize_t is a POSIX typedef, provided by <unistd.h>
         ssize_t n = ::read(STDIN_FILENO, &c, 1);
         if (n <= 0)
             break;
