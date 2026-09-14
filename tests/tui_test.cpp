@@ -1,12 +1,12 @@
 #include "src/tui/tui.hpp"
+
 #include "src/enums/field_type.hpp"
 #include "src/game/game.hpp"
 #include "src/structs/board_coord.hpp"
 
+#include <gtest/gtest.h>
 #include <string>
 #include <string_view>
-
-#include <gtest/gtest.h>
 
 using namespace std::string_view_literals;
 
@@ -36,18 +36,30 @@ std::string originName(const testing::TestParamInfo<Origin>& info) {
 
 std::string fieldTypeName(const testing::TestParamInfo<FieldType>& info) {
     switch (info.param) {
-        case FieldType::HIDDEN:      return "Hidden";
-        case FieldType::NEUTRAL:     return "Neutral";
-        case FieldType::MINE:        return "Mine";
-        case FieldType::MARKED_MINE: return "MarkedMine";
-        case FieldType::ONE:         return "One";
-        case FieldType::TWO:         return "Two";
-        case FieldType::THREE:       return "Three";
-        case FieldType::FOUR:        return "Four";
-        case FieldType::FIVE:        return "Five";
-        case FieldType::SIX:         return "Six";
-        case FieldType::SEVEN:       return "Seven";
-        case FieldType::EIGHT:       return "Eight";
+        case FieldType::HIDDEN:
+            return "Hidden";
+        case FieldType::NEUTRAL:
+            return "Neutral";
+        case FieldType::MINE:
+            return "Mine";
+        case FieldType::MARKED_MINE:
+            return "MarkedMine";
+        case FieldType::ONE:
+            return "One";
+        case FieldType::TWO:
+            return "Two";
+        case FieldType::THREE:
+            return "Three";
+        case FieldType::FOUR:
+            return "Four";
+        case FieldType::FIVE:
+            return "Five";
+        case FieldType::SIX:
+            return "Six";
+        case FieldType::SEVEN:
+            return "Seven";
+        case FieldType::EIGHT:
+            return "Eight";
     }
     return "Unknown";
 }
@@ -58,18 +70,18 @@ TEST_P(TuiBoardCellAtTest, RejectsCoordinatesOutsideTheGrid) {
     const Origin origin = GetParam();
     const int kCellWidth = 3;
     const int first_row = origin.row + 1;
-    const int last_row  = origin.row + static_cast<int>(Game::kFieldSize);
+    const int last_row = origin.row + static_cast<int>(Game::kFieldSize);
     const int first_col = origin.col + 1;
-    const int last_col  = origin.col + static_cast<int>(Game::kFieldSize) * kCellWidth;
+    const int last_col = origin.col + static_cast<int>(Game::kFieldSize) * kCellWidth;
 
     Tui tui(origin.row, origin.col);
 
     const RejectCase rejects[] = {
-        { first_row - 1, first_col - 1, "origin is not in the grid" },
-        { first_row - 1, first_col,     "one row above the grid" },
-        { last_row + 1,  first_col,     "one row below the grid" },
-        { first_row,     first_col - 1, "one column left of the grid" },
-        { first_row,     last_col + 1,  "one column right of the grid" },
+        {first_row - 1, first_col - 1, "origin is not in the grid"},
+        {first_row - 1, first_col, "one row above the grid"},
+        {last_row + 1, first_col, "one row below the grid"},
+        {first_row, first_col - 1, "one column left of the grid"},
+        {first_row, last_col + 1, "one column right of the grid"},
     };
 
     for (const RejectCase& t : rejects) {
@@ -81,18 +93,18 @@ TEST_P(TuiBoardCellAtTest, RejectsCoordinatesOutsideTheGrid) {
 TEST_P(TuiBoardCellAtTest, AcceptsCoordinatesInsideTheGrid) {
     const Origin origin = GetParam();
     const int first_row = origin.row + 1;
-    const int last_row  = origin.row + static_cast<int>(Game::kFieldSize);
+    const int last_row = origin.row + static_cast<int>(Game::kFieldSize);
     const int first_col = origin.col + 1;
-    const int last_col  = origin.col + static_cast<int>(Game::kFieldSize) * 3;
+    const int last_col = origin.col + static_cast<int>(Game::kFieldSize) * 3;
 
     Tui tui(origin.row, origin.col);
 
     const AcceptCase accepts[] = {
-        { first_row, first_col,     BoardCoord{0, 0}, "first cell" },
-        { last_row,  first_col,     BoardCoord{8, 0}, "last row in the first column" },
-        { first_row, last_col,      BoardCoord{0, 8}, "first row in the last column" },
-        { first_row, first_col + 2, BoardCoord{0, 0}, "last column of the first cell" },
-        { first_row, first_col + 3, BoardCoord{0, 1}, "first column of the second cell" },
+        {first_row, first_col, BoardCoord{0, 0}, "first cell"},
+        {last_row, first_col, BoardCoord{8, 0}, "last row in the first column"},
+        {first_row, last_col, BoardCoord{0, 8}, "first row in the last column"},
+        {first_row, first_col + 2, BoardCoord{0, 0}, "last column of the first cell"},
+        {first_row, first_col + 3, BoardCoord{0, 1}, "first column of the second cell"},
     };
 
     for (const AcceptCase& t : accepts) {
@@ -114,28 +126,13 @@ TEST_P(TuiGlyphHiddenTest, ReturnsHiddenSymbol) {
     EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    FieldTypes,
-    TuiGlyphHiddenTest,
-    testing::Values(
-        FieldType::MINE,
-        FieldType::ONE,
-        FieldType::TWO,
-        FieldType::THREE,
-        FieldType::FOUR,
-        FieldType::FIVE,
-        FieldType::SIX,
-        FieldType::SEVEN,
-        FieldType::EIGHT,
-        FieldType::NEUTRAL,
-        FieldType::MARKED_MINE,
-        FieldType::HIDDEN),
-    fieldTypeName);
+INSTANTIATE_TEST_SUITE_P(FieldTypes, TuiGlyphHiddenTest,
+                         testing::Values(FieldType::MINE, FieldType::ONE, FieldType::TWO, FieldType::THREE,
+                                         FieldType::FOUR, FieldType::FIVE, FieldType::SIX, FieldType::SEVEN,
+                                         FieldType::EIGHT, FieldType::NEUTRAL, FieldType::MARKED_MINE,
+                                         FieldType::HIDDEN),
+                         fieldTypeName);
 
-INSTANTIATE_TEST_SUITE_P(
-    Origins,
-    TuiBoardCellAtTest,
-    testing::Values(Origin{0, 0}, Origin{2, 5}),
-    originName);
+INSTANTIATE_TEST_SUITE_P(Origins, TuiBoardCellAtTest, testing::Values(Origin{0, 0}, Origin{2, 5}), originName);
 
-}  // namespace
+} // namespace

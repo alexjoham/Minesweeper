@@ -74,3 +74,21 @@ jobs:
           --warnings-as-errors='*'
           src/game/game.cpp src/tui/tui.cpp src/button/button.cpp src/main.cpp
           tests/game_test.cpp tests/tui_test.cpp
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Check formatting
+        run: >
+          clang-format --dry-run --Werror
+          src/game/game.cpp src/game/game.hpp src/game/random_layout.hpp
+          src/tui/tui.cpp src/tui/tui.hpp
+          src/button/button.cpp src/button/button.hpp
+          src/enums/field_type.hpp src/enums/game_state.hpp
+          src/structs/board_coord.hpp src/helpers.hpp src/main.cpp
+          tests/game_test.cpp tests/tui_test.cpp

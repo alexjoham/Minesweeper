@@ -1,81 +1,77 @@
 #pragma once
-#include <vector>
-#include <array>
-#include <optional>
-#include "../structs/board_coord.hpp"
 #include "../enums/field_type.hpp"
+#include "../structs/board_coord.hpp"
 #include "random_layout.hpp"
 
-struct Playerield
-{
+#include <array>
+#include <optional>
+#include <vector>
+
+struct Playerield {
     bool hidden = true;
     bool flagged = false;
     FieldType fieldType = FieldType::HIDDEN;
 };
 
-struct RevealedCell { 
+struct RevealedCell {
     BoardCoord coordinates;
     Playerield cell;
 };
 
-
 class Game {
-    public:
-        static constexpr size_t kFieldSize = 9;
-        static constexpr int kNumMines = 10;
+public:
+    static constexpr size_t kFieldSize = 9;
+    static constexpr int kNumMines = 10;
 
-        using Board = std::array<std::array<Playerield, kFieldSize>, kFieldSize>;
+    using Board = std::array<std::array<Playerield, kFieldSize>, kFieldSize>;
 
-        using MineLayout = std::array<std::array<bool, kFieldSize>, kFieldSize>;
+    using MineLayout = std::array<std::array<bool, kFieldSize>, kFieldSize>;
 
-        void restart();
+    void restart();
 
-        std::vector<RevealedCell> revealAll();
+    std::vector<RevealedCell> revealAll();
 
-        std::vector<RevealedCell> makeMove(size_t row, size_t column);
+    std::vector<RevealedCell> makeMove(size_t row, size_t column);
 
-        const Board& getPlayerfield() const {
-            return playerfield_;
-        }
+    const Board& getPlayerfield() const { return playerfield_; }
 
-        std::optional<Playerield> toggleFlag(size_t row, size_t column) {
+    std::optional<Playerield> toggleFlag(size_t row, size_t column) {
         if (row >= kFieldSize || column >= kFieldSize) {
             return std::nullopt;
         }
-            if (playerfield_[row][column].hidden) {
-                playerfield_[row][column].flagged = !playerfield_[row][column].flagged;
-                return playerfield_[row][column];
-            }
-            return std::nullopt;
+        if (playerfield_[row][column].hidden) {
+            playerfield_[row][column].flagged = !playerfield_[row][column].flagged;
+            return playerfield_[row][column];
         }
+        return std::nullopt;
+    }
 
-        bool game_won() const;
+    bool game_won() const;
 
-        explicit Game(const MineLayout& mines);
+    explicit Game(const MineLayout& mines);
 
-        Game() : Game(randomLayout<kFieldSize>(kNumMines, defaultRng())) {};
-    private:
+    Game() : Game(randomLayout<kFieldSize>(kNumMines, defaultRng())) {};
 
-        void createNewGame(const MineLayout& mines);
+private:
+    void createNewGame(const MineLayout& mines);
 
-        void updateNearbyMineNumbers();
+    void updateNearbyMineNumbers();
 
-        void updateFieldsAroundMine(size_t row, size_t column);
+    void updateFieldsAroundMine(size_t row, size_t column);
 
-        std::vector<RevealedCell> revealFieldsAroundMove(size_t row, size_t column);
+    std::vector<RevealedCell> revealFieldsAroundMove(size_t row, size_t column);
 
-        /**
-         * minefield state
-         * -1: mine
-         * 0: none
-         * 1: one mine nearby, for all other numbers the same
-         */
-        std::array<std::array<int, kFieldSize>, kFieldSize> minefield_{};
-        Board playerfield_{};
+    /**
+     * minefield state
+     * -1: mine
+     * 0: none
+     * 1: one mine nearby, for all other numbers the same
+     */
+    std::array<std::array<int, kFieldSize>, kFieldSize> minefield_{};
+    Board playerfield_{};
 
-        FieldType getFieldType(size_t row, size_t column) const {
-            switch (minefield_[row][column])
-            {
+    FieldType getFieldType(size_t row, size_t column) const {
+        switch (minefield_[row][column]) {
             case -1:
                 return FieldType::MINE;
                 break;
@@ -109,6 +105,6 @@ class Game {
             default:
                 return FieldType::NEUTRAL;
                 break;
-            }
         }
+    }
 };

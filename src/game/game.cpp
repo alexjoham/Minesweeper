@@ -1,7 +1,8 @@
 #include "game.hpp"
-#include "random_layout.hpp"
+
 #include "../enums/field_type.hpp"
 #include "../structs/board_coord.hpp"
+#include "random_layout.hpp"
 
 #include <array>
 #include <cstddef>
@@ -10,7 +11,7 @@
 
 void Game::updateNearbyMineNumbers() {
     for (size_t i = 0; i < kFieldSize; i++) {
-        for(size_t j = 0; j < kFieldSize; j++) {
+        for (size_t j = 0; j < kFieldSize; j++) {
             if (minefield_[i][j] == -1) {
                 updateFieldsAroundMine(i, j);
             }
@@ -24,10 +25,12 @@ void Game::updateFieldsAroundMine(size_t row, size_t column) {
     size_t c_start = column > 0 ? column - 1 : 0;
     size_t c_end = column + 1 >= kFieldSize ? kFieldSize - 1 : column + 1;
 
-    for(size_t i = r_start; i <= r_end; i++) {
-        for(size_t j = c_start; j <= c_end; j++) {
-            if (row == i && column == j) continue; // mine that we update around
-            if (minefield_[i][j] == -1) continue; // mine itself, do not update!
+    for (size_t i = r_start; i <= r_end; i++) {
+        for (size_t j = c_start; j <= c_end; j++) {
+            if (row == i && column == j)
+                continue; // mine that we update around
+            if (minefield_[i][j] == -1)
+                continue; // mine itself, do not update!
             minefield_[i][j] += 1;
         }
     }
@@ -52,7 +55,7 @@ std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
     if (row >= kFieldSize || column >= kFieldSize) {
         return revealedButtons;
     }
-    if(playerfield_[row][column].hidden && !playerfield_[row][column].flagged) {
+    if (playerfield_[row][column].hidden && !playerfield_[row][column].flagged) {
         FieldType fieldType = getFieldType(row, column);
         playerfield_[row][column].fieldType = fieldType;
         if (fieldType != FieldType::NEUTRAL) {
@@ -77,7 +80,7 @@ std::vector<RevealedCell> Game::revealFieldsAroundMove(size_t row, size_t column
     toProcess.push(BoardCoord{row, column});
     visited[row][column] = true;
 
-    while(toProcess.size() > 0) {
+    while (toProcess.size() > 0) {
         BoardCoord processed = toProcess.front();
         toProcess.pop();
         row = processed.row;
@@ -98,8 +101,8 @@ std::vector<RevealedCell> Game::revealFieldsAroundMove(size_t row, size_t column
         size_t r_end = row + 1 >= kFieldSize ? kFieldSize - 1 : row + 1;
         size_t c_start = column > 0 ? column - 1 : 0;
         size_t c_end = column + 1 >= kFieldSize ? kFieldSize - 1 : column + 1;
-        for(size_t i = r_start; i <= r_end; i++) {
-            for(size_t j = c_start; j <= c_end; j++) {
+        for (size_t i = r_start; i <= r_end; i++) {
+            for (size_t j = c_start; j <= c_end; j++) {
                 if (playerfield_[i][j].hidden && !visited[i][j] && !playerfield_[i][j].flagged) {
                     visited[i][j] = true;
                     toProcess.push(BoardCoord{i, j});
@@ -108,16 +111,14 @@ std::vector<RevealedCell> Game::revealFieldsAroundMove(size_t row, size_t column
         }
     }
 
-    
-
     return revealedFields;
 }
 
 std::vector<RevealedCell> Game::revealAll() {
     std::vector<RevealedCell> revealedButtons;
     for (size_t i = 0; i < kFieldSize; i++) {
-        for(size_t j = 0; j < kFieldSize; j++) {
-            if(playerfield_[i][j].hidden) {
+        for (size_t j = 0; j < kFieldSize; j++) {
+            if (playerfield_[i][j].hidden) {
                 playerfield_[i][j].hidden = false;
                 playerfield_[i][j].fieldType = getFieldType(i, j);
                 revealedButtons.push_back(RevealedCell{BoardCoord{i, j}, playerfield_[i][j]});
@@ -129,9 +130,10 @@ std::vector<RevealedCell> Game::revealAll() {
 
 bool Game::game_won() const {
     for (size_t i = 0; i < kFieldSize; i++) {
-        for(size_t j = 0; j < kFieldSize; j++) {
-            if(playerfield_[i][j].hidden) {
-                if(getFieldType(i, j) != FieldType::MINE) return false;
+        for (size_t j = 0; j < kFieldSize; j++) {
+            if (playerfield_[i][j].hidden) {
+                if (getFieldType(i, j) != FieldType::MINE)
+                    return false;
             }
         }
     }

@@ -1,20 +1,19 @@
-#include <signal.h>
-#include <termios.h>
-#include <unistd.h>
+#include "button/button.hpp"
+#include "enums/field_type.hpp"
+#include "enums/game_state.hpp"
+#include "game/game.hpp"
+#include "helpers.hpp"
+#include "tui/tui.hpp"
 
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <signal.h>
 #include <string>
+#include <termios.h>
+#include <unistd.h>
 #include <vector>
-
-#include "enums/game_state.hpp"
-#include "enums/field_type.hpp"
-#include "game/game.hpp"
-#include "helpers.hpp"
-#include "tui/tui.hpp"
-#include "button/button.hpp"
 
 constexpr int PLAYING_FIELD_X = 2;
 constexpr int PLAYING_FIELD_Y = 2;
@@ -27,9 +26,9 @@ Tui tui = Tui(PLAYING_FIELD_X, PLAYING_FIELD_Y);
 static bool set_flag = false;
 UnicodeButton flag_button = UnicodeButton(1, 3, 3, "\u2691", "\x1b[93m");
 
-
 static void restore_terminal() {
-    if (!g_raw_active) return;
+    if (!g_raw_active)
+        return;
     g_raw_active = false;
     emit_terminal_command("\x1b[?1006l"   // disable SGR mouse mode
                           "\x1b[?1002l"   // drag reporting off
@@ -45,7 +44,7 @@ static void on_signal(int) {
 }
 
 static void setup_terminal() {
-    if(tcgetattr(STDIN_FILENO, &term) == -1) {
+    if (tcgetattr(STDIN_FILENO, &term) == -1) {
         std::fprintf(stderr, "not a terminal\n");
         std::exit(1);
     }
@@ -59,10 +58,10 @@ static void setup_terminal() {
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
     g_raw_active = true;
 
-    emit_terminal_command("\x1b[?1049h" // alternative screen bugger
-                          "\x1b[?25l"   // hide the cursor
-                          "\x1b[?1000h" // mouse reporting
-                          "\x1b[?1002h" // drag reporting
+    emit_terminal_command("\x1b[?1049h"   // alternative screen bugger
+                          "\x1b[?25l"     // hide the cursor
+                          "\x1b[?1000h"   // mouse reporting
+                          "\x1b[?1002h"   // drag reporting
                           "\x1b[?1006h"); // enable SGR mouse mode
 
     std::atexit(restore_terminal);
@@ -70,10 +69,11 @@ static void setup_terminal() {
     std::signal(SIGHUP, on_signal);
 }
 
-static void draw_all(std::vector<std::unique_ptr<Button>> &buttons) {
+static void draw_all(std::vector<std::unique_ptr<Button>>& buttons) {
     clear_screen();
     emit_terminal_command(at(3, 3) + "\x1b[2mWelcome to Minesweeper. Press q to quit.\x1b[0m");
-    for (const auto &b : buttons) b->draw();
+    for (const auto& b : buttons)
+        b->draw();
 }
 
 static void drawGameInfo() {
@@ -82,18 +82,21 @@ static void drawGameInfo() {
 }
 
 static void drawGameLost() {
-    emit_terminal_command(at(0, 0) + "\x1b[91mGAME LOST\x1b[0m\x1b[2m. Press \x1b[0m\x1b[1mr\x1b[0m\x1b[2m to retry.\x1b[0m");
+    emit_terminal_command(at(0, 0) +
+                          "\x1b[91mGAME LOST\x1b[0m\x1b[2m. Press \x1b[0m\x1b[1mr\x1b[0m\x1b[2m to retry.\x1b[0m");
 }
 
 static void drawGameWon() {
-    emit_terminal_command(at(0, 0) + "\x1b[92mGAME WON!\x1b[0m\x1b[2m. Press \x1b[0m\x1b[1mr\x1b[0m\x1b[2m to replay.\x1b[0m");
+    emit_terminal_command(at(0, 0) +
+                          "\x1b[92mGAME WON!\x1b[0m\x1b[2m. Press \x1b[0m\x1b[1mr\x1b[0m\x1b[2m to replay.\x1b[0m");
 }
 
 static void drawGameRules(int x, int y) {
     emit_terminal_command(at(x, y) + "\x1b[2mLeft-click to open a square.\x1b[0m");
-    emit_terminal_command(at(x+1, y) + "\x1b[2mSelect the flag to place a flag with left click where you think a mine is.\x1b[0m");
-    emit_terminal_command(at(x+2, y) + "\x1b[2mThe numbers show you how many mines are around this square (vertically, horizontally and diagonally.\x1b[0m");
-    
+    emit_terminal_command(at(x + 1, y) +
+                          "\x1b[2mSelect the flag to place a flag with left click where you think a mine is.\x1b[0m");
+    emit_terminal_command(at(x + 2, y) + "\x1b[2mThe numbers show you how many mines are around this square "
+                                         "(vertically, horizontally and diagonally.\x1b[0m");
 }
 
 int main() {
@@ -102,22 +105,32 @@ int main() {
     std::vector<std::unique_ptr<Button>> buttons;
     buttons.push_back(std::make_unique<LabelButton>(6, 3, 14, "Start", "\x1b[48;5;24m\x1b[97m"));
     const int start_id = buttons.back()->getID();
-    buttons.push_back(std::make_unique<LabelButton>(6, 35, 14, "Quit",  "\x1b[48;5;52m\x1b[97m"));
+    buttons.push_back(std::make_unique<LabelButton>(6, 35, 14, "Quit", "\x1b[48;5;52m\x1b[97m"));
     const int guit_id = buttons.back()->getID();
     draw_all(buttons);
 
     bool running = true;
     std::string buf;
 
-    while(running) {
+    while (running) {
         char c;
         ssize_t n = ::read(STDIN_FILENO, &c, 1);
-        if (n <= 0) break;
+        if (n <= 0)
+            break;
         buf.push_back(c);
 
         if (buf.size() == 1 && c != '\x1b') {
-            if (c == 'q' || c == 3 /* Ctrl+C */) running = false;
-            if (c == 'r') { state = GameState::GAME; game.restart(); clear_screen(); drawGameInfo(); tui.drawGame(game.getPlayerfield()); buf.clear(); continue; }
+            if (c == 'q' || c == 3 /* Ctrl+C */)
+                running = false;
+            if (c == 'r') {
+                state = GameState::GAME;
+                game.restart();
+                clear_screen();
+                drawGameInfo();
+                tui.drawGame(game.getPlayerfield());
+                buf.clear();
+                continue;
+            }
             buf.clear();
             continue;
         }
@@ -126,40 +139,50 @@ int main() {
             buf.clear();
             continue;
         }
-        if (buf.size() < 4) continue;
+        if (buf.size() < 4)
+            continue;
 
         if (c == 'M' || c == 'm') {
             int btn = 0, mx = 0, my = 0;
             bool parsed = std::sscanf(buf.c_str(), "\x1b[<%d;%d;%d", &btn, &my, &mx) == 3;
             buf.clear();
             if (parsed) {
-                bool press   = (c == 'M');
-                bool motion  = (btn & 0x20) != 0;   // drag, not a fresh click
-                bool wheel   = (btn & 0x40) != 0;
+                bool press = (c == 'M');
+                bool motion = (btn & 0x20) != 0; // drag, not a fresh click
+                bool wheel = (btn & 0x40) != 0;
                 bool is_left = (btn & 0x03) == 0;
 
                 if (!motion && !wheel && is_left) {
                     if (press) {
-                        for (auto &b : buttons) b->press(mx, my);
+                        for (auto& b : buttons)
+                            b->press(mx, my);
                         flag_button.press(mx, my);
                     } else {
                         switch (state) {
                             case GameState::MENU: {
                                 bool switch_to_game = false;
                                 bool quit_clicked = false;
-                                for (auto &b : buttons) {
+                                for (auto& b : buttons) {
                                     if (b->release(mx, my)) {
-                                        if (b->getID() == start_id) { switch_to_game = true; }
-                                        else if (b->getID() == guit_id) { quit_clicked = true; }
+                                        if (b->getID() == start_id) {
+                                            switch_to_game = true;
+                                        } else if (b->getID() == guit_id) {
+                                            quit_clicked = true;
+                                        }
                                     }
                                 }
-                                if (quit_clicked) { running = false; buf.clear(); continue; }
+                                if (quit_clicked) {
+                                    running = false;
+                                    buf.clear();
+                                    continue;
+                                }
                                 if (switch_to_game) {
                                     state = GameState::GAME;
                                     clear_screen();
-                                    drawGameInfo(); 
+                                    drawGameInfo();
                                     int height = tui.drawGame(game.getPlayerfield());
-                                    drawGameRules(PLAYING_FIELD_X+height, PLAYING_FIELD_Y); continue;
+                                    drawGameRules(PLAYING_FIELD_X + height, PLAYING_FIELD_Y);
+                                    continue;
                                 }
                                 draw_all(buttons);
                                 break;
@@ -180,8 +203,9 @@ int main() {
                                 if (!set_flag) {
                                     if (auto cell = tui.boardCellAt(mx, my)) {
                                         auto result = game.makeMove(cell->row, cell->column);
-                                        if(result.size() > 0) {
-                                            if (result.size() == 1 && result.front().cell.fieldType == FieldType::MINE) {
+                                        if (result.size() > 0) {
+                                            if (result.size() == 1 &&
+                                                result.front().cell.fieldType == FieldType::MINE) {
                                                 result = game.revealAll();
                                                 game_lost = true;
                                             }
@@ -206,7 +230,7 @@ int main() {
                                 }
                                 drawGameInfo();
                                 int height = tui.drawGame(game.getPlayerfield());
-                                drawGameRules(PLAYING_FIELD_X+height, PLAYING_FIELD_Y);
+                                drawGameRules(PLAYING_FIELD_X + height, PLAYING_FIELD_Y);
                                 break;
                             }
                             case GameState::LOST:
@@ -218,14 +242,15 @@ int main() {
                                 tui.drawGame(game.getPlayerfield());
                                 break;
                             default:
-                            break;
+                                break;
                         }
                     }
                 }
             }
         }
 
-        if (buf.size() > 32) buf.clear(); // give up on a malformed sequence
+        if (buf.size() > 32)
+            buf.clear(); // give up on a malformed sequence
     }
 
     restore_terminal();

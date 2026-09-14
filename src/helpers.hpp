@@ -2,7 +2,7 @@
 #include <string>
 #include <unistd.h>
 
-inline void emit_terminal_command(const std::string &s) {
+inline void emit_terminal_command(const std::string& s) {
     ssize_t ignored = ::write(STDOUT_FILENO, s.data(), s.size());
     (void)ignored;
 }
