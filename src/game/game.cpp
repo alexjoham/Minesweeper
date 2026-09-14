@@ -4,9 +4,10 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdlib>
-#include <ctime>
+#include <cassert>
+#include <numeric>
 #include <queue>
+#include <random>
 #include <vector>
 
 void Game::updateNearbyMineNumbers() {
@@ -140,28 +141,19 @@ bool Game::game_won() {
 }
 
 Game::MineLayout Game::randomLayout(int mine_count) {
+    assert(mine_count >= 0 && static_cast<size_t>(mine_count) <= kFieldSize * kFieldSize);
+
     Game::MineLayout minefield{};
-    if (kFieldSize <= 0) {
-        return minefield;
-    }
-    static bool seeded = false;
-    if (!seeded) { srand((unsigned)time(0)); seeded = true; }
 
-    std::vector<int> mines;
+    std::array<size_t, kFieldSize * kFieldSize> cells{};
+    std::iota(cells.begin(), cells.end(), size_t{0});
 
-    // Fill the filed with mines
+    static std::mt19937 rng{std::random_device{}()};
+    std::shuffle(cells.begin(), cells.end(), rng);
+
     for (int i = 0; i < mine_count; i++) {
-        const size_t j = (static_cast<size_t>(rand())%(kFieldSize*kFieldSize));
-        bool in_array = std::find(mines.begin(), mines.end(), j) != mines.end();
-        if (in_array) {
-            i -= 1;
-            continue;
-        } else {
-            mines.emplace_back(j);
-            size_t row = j / kFieldSize;
-            size_t column = j % kFieldSize;
-            minefield[row][column] = true;
-        }
+        const size_t cell = cells[static_cast<size_t>(i)];
+        minefield[cell / kFieldSize][cell % kFieldSize] = true;
     }
     return minefield;
 }

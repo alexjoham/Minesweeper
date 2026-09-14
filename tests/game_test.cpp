@@ -104,6 +104,24 @@ TEST(GameTest, RandomGeneratedFieldHasCorrectNumberOfMines) {
     EXPECT_EQ(num_mines, Game::kNumMines);
 }
 
+TEST(GameTest, RandomLayoutProducesRequestedMineCount) {
+    Game::MineLayout layout = Game::randomLayout(static_cast<int>(Game::kFieldSize * Game::kFieldSize));
+
+    size_t num_mines = 0;
+    for (size_t i = 0; i < Game::kFieldSize; i++) {
+        for (size_t j = 0; j < Game::kFieldSize; j++) {
+            if (layout[i][j]) ++num_mines;
+        }
+    }
+    EXPECT_EQ(num_mines, Game::kFieldSize * Game::kFieldSize);
+}
+
+TEST(GameTest, RandomLayoutAssertsWhenMineCountExceedsBoardSize) {
+    EXPECT_DEATH(
+        Game::randomLayout(static_cast<int>(Game::kFieldSize * Game::kFieldSize) + 1),
+        "");
+}
+
 TEST(GameTest, HittingANumberCellOnlyRevealsThisCell) {
     Game game = Game(layoutWith({ { 0, 0 } }));
     std::vector<RevealedCell> revealed_cells = game.makeMove(0, 1);
