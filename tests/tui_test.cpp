@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+using namespace std::string_view_literals;
+
 namespace {
 
 struct RejectCase {
@@ -79,29 +81,29 @@ TEST(TuiTest, GlyphFunctionReturnsHiddenSymbolForEveryFieldType) {
     Playerield pf;
     pf.hidden = true;
     pf.flagged = false;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::MINE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::ONE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::TWO;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::THREE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::FOUR;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::FIVE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::SIX;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::SEVEN;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::EIGHT;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::NEUTRAL;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
     pf.fieldType = FieldType::MARKED_MINE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
 
 }
 
