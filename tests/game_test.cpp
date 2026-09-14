@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iterator>
+#include <optional>
 #include <random>
 #include <set>
 #include <type_traits>
