@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 project(minesweeper LANGUAGES CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 add_library(ms_warnings INTERFACE)
 target_compile_options(ms_warnings INTERFACE
     -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror
@@ -20,11 +23,6 @@ target_link_libraries(ms_core PRIVATE ms_warnings)
 add_executable(minesweeper src/main.cpp)
 target_link_libraries(minesweeper PRIVATE ms_core ms_warnings)
 
-set_target_properties(minesweeper PROPERTIES
-    EXPORT_COMPILE_COMMANDS ON
-    CXX_EXTENSIONS OFF
-)
-
 include(FetchContent)
 FetchContent_Declare(
     googletest
@@ -33,7 +31,9 @@ FetchContent_Declare(
 )
 set(BUILD_GMOCK OFF)
 set(INSTALL_GTEST OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
 FetchContent_MakeAvailable(googletest)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 enable_testing()
 include(GoogleTest)
