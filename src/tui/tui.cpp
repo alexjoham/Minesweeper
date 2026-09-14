@@ -1,4 +1,10 @@
 #include "tui.hpp"
+#include "../game/game.hpp"
+#include "../helpers.hpp"
+
+#include <cstddef>
+#include <string>
+#include <string_view>
 
 int Tui::drawGame(const Game::Board& board) {
     const int size = static_cast<int>(board.size());

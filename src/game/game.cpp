@@ -1,10 +1,13 @@
 #include "game.hpp"
-#include <vector>
-#include <cstdlib> 
-#include <ctime>
+#include "../enums/field_type.hpp"
+#include "../structs/board_coord.hpp"
+
 #include <algorithm>
-#include "../helpers.hpp"
+#include <array>
+#include <cstdlib>
+#include <ctime>
 #include <queue>
+#include <vector>
 
 void Game::updateNearbyMineNumbers() {
     for (size_t i = 0; i < kFieldSize; i++) {

@@ -1,16 +1,18 @@
+#include <signal.h>
 #include <termios.h>
 #include <unistd.h>
 
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
-#include <string>
-#include <csignal>
 #include <memory>
+#include <string>
 #include <vector>
-#include <algorithm>
 
 #include "enums/game_state.hpp"
+#include "enums/field_type.hpp"
 #include "game/game.hpp"
+#include "helpers.hpp"
 #include "tui/tui.hpp"
 #include "button/button.hpp"
 

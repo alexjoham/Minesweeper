@@ -1,7 +1,10 @@
 #include "src/tui/tui.hpp"
+#include "src/enums/field_type.hpp"
+#include "src/game/game.hpp"
 #include "src/structs/board_coord.hpp"
 
 #include <string>
+#include <string_view>
 
 #include <gtest/gtest.h>
 

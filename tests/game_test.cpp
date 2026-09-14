@@ -1,4 +1,5 @@
 #include "src/game/game.hpp"
+#include "src/enums/field_type.hpp"
 #include "src/structs/board_coord.hpp"
 
 #include <algorithm>
