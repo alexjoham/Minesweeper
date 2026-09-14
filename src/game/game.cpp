@@ -54,6 +54,7 @@ std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
         FieldType fieldType = getFieldType(row, column);
         playerfield_[row][column].fieldType = fieldType;
         if (fieldType == FieldType::MINE) {
+            playerfield_[row][column].hidden = false;
             revealedButtons.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
             return revealedButtons;
         } else if (fieldType != FieldType::NEUTRAL) {
