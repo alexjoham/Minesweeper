@@ -61,6 +61,9 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
+      - name: Report toolchain version
+        run: clang-tidy-18 --version
+
       - name: Configure
         run: >
           cmake -S . -B build
@@ -69,7 +72,7 @@ jobs:
 
       - name: Run clang-tidy
         run: >
-          clang-tidy -p build
+          clang-tidy-18 -p build
           --checks='-*,misc-include-cleaner'
           --warnings-as-errors='*'
           src/game/game.cpp src/tui/tui.cpp src/button/button.cpp src/main.cpp
@@ -83,9 +86,12 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
+      - name: Report toolchain version
+        run: clang-format-18 --version
+
       - name: Check formatting
         run: >
-          clang-format --dry-run --Werror
+          clang-format-18 --dry-run --Werror
           src/game/game.cpp src/game/game.hpp src/game/random_layout.hpp
           src/tui/tui.cpp src/tui/tui.hpp
           src/button/button.cpp src/button/button.hpp
