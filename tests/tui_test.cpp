@@ -75,6 +75,36 @@ TEST_P(TuiBoardCellAtTest, AcceptsCoordinatesInsideTheGrid) {
     }
 }
 
+TEST(TuiTest, GlyphFunctionReturnsHiddenSymbolForEveryFieldType) {
+    Playerield pf;
+    pf.hidden = true;
+    pf.flagged = false;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::MINE;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::ONE;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::TWO;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::THREE;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::FOUR;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::FIVE;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::SIX;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::SEVEN;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::EIGHT;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::NEUTRAL;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+    pf.fieldType = FieldType::MARKED_MINE;
+    EXPECT_EQ(Tui::glyph(pf), "\u25A2");
+
+}
+
 INSTANTIATE_TEST_SUITE_P(
     Origins,
     TuiBoardCellAtTest,

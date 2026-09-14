@@ -146,3 +146,29 @@ TEST(GameTest, HittingANumberSixCellOnlyRevealsThisCell) {
     std::vector<RevealedCell> revealed_cells = game.makeMove(4, 4);
     EXPECT_EQ(revealed_cells.size(), 1u);
 }
+
+TEST(GameTest, MakeMoveOnMineEveryOtherCellStaysHiddenExceptMineCell) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    std::vector<RevealedCell> revealed_cells = game.makeMove(4, 4);
+    EXPECT_EQ(revealed_cells.size(), 1u);
+    Game::Board board = game.getPlayerfield();
+    for (size_t i = 0; i < Game::kFieldSize; i++) {
+        for (size_t j = 0; j < Game::kFieldSize; j++) {
+            if (board[i][j].hidden) {
+                EXPECT_EQ(board[i][j].fieldType, FieldType::HIDDEN) << "at (" << i << "," << j << ")";
+            }
+        }
+    }
+}
+
+TEST(GameTest, ToggleFlagOnMineCellThatMakeMoveConsumedReturnsNullopt) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    game.makeMove(4, 4);
+    EXPECT_FALSE(game.toggleFlag(4, 4).has_value());
+}
+
+TEST(GameTest, ToggleFlagOnNonMineCellThatMakeMoveConsumedReturnsNullopt) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    game.makeMove(3, 3);
+    EXPECT_FALSE(game.toggleFlag(3, 3).has_value());
+}
