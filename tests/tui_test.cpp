@@ -77,35 +77,32 @@ TEST_P(TuiBoardCellAtTest, AcceptsCoordinatesInsideTheGrid) {
     }
 }
 
-TEST(TuiTest, GlyphFunctionReturnsHiddenSymbolForEveryFieldType) {
+class TuiGlyphHiddenTest : public testing::TestWithParam<FieldType> {};
+
+TEST_P(TuiGlyphHiddenTest, ReturnsHiddenSymbol) {
     Playerield pf;
     pf.hidden = true;
     pf.flagged = false;
+    pf.fieldType = GetParam();
     EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::MINE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::ONE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::TWO;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::THREE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::FOUR;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::FIVE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::SIX;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::SEVEN;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::EIGHT;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::NEUTRAL;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-    pf.fieldType = FieldType::MARKED_MINE;
-    EXPECT_EQ(Tui::glyph(pf), "\u25A2"sv);
-
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    FieldTypes,
+    TuiGlyphHiddenTest,
+    testing::Values(
+        FieldType::MINE,
+        FieldType::ONE,
+        FieldType::TWO,
+        FieldType::THREE,
+        FieldType::FOUR,
+        FieldType::FIVE,
+        FieldType::SIX,
+        FieldType::SEVEN,
+        FieldType::EIGHT,
+        FieldType::NEUTRAL,
+        FieldType::MARKED_MINE,
+        FieldType::HIDDEN));
 
 INSTANTIATE_TEST_SUITE_P(
     Origins,
