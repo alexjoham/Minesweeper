@@ -1,13 +1,11 @@
 #include "game.hpp"
+#include "random_layout.hpp"
 #include "../enums/field_type.hpp"
 #include "../structs/board_coord.hpp"
 
-#include <algorithm>
 #include <array>
-#include <cassert>
-#include <numeric>
+#include <cstddef>
 #include <queue>
-#include <random>
 #include <vector>
 
 void Game::updateNearbyMineNumbers() {
@@ -46,7 +44,7 @@ void Game::createNewGame(const MineLayout& mines) {
 }
 
 void Game::restart() {
-    createNewGame(randomLayout(kNumMines));
+    createNewGame(randomLayout<kFieldSize>(kNumMines, defaultRng()));
 }
 
 std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
@@ -138,24 +136,6 @@ bool Game::game_won() {
         }
     }
     return true;
-}
-
-Game::MineLayout Game::randomLayout(int mine_count) {
-    assert(mine_count >= 0 && static_cast<size_t>(mine_count) <= kFieldSize * kFieldSize);
-
-    Game::MineLayout minefield{};
-
-    std::array<size_t, kFieldSize * kFieldSize> cells{};
-    std::iota(cells.begin(), cells.end(), size_t{0});
-
-    static std::mt19937 rng{std::random_device{}()};
-    std::shuffle(cells.begin(), cells.end(), rng);
-
-    for (int i = 0; i < mine_count; i++) {
-        const size_t cell = cells[static_cast<size_t>(i)];
-        minefield[cell / kFieldSize][cell % kFieldSize] = true;
-    }
-    return minefield;
 }
 
 Game::Game(const MineLayout& mines) {

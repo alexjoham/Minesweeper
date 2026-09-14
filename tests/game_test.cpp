@@ -1,4 +1,5 @@
 #include "src/game/game.hpp"
+#include "src/game/random_layout.hpp"
 #include "src/enums/field_type.hpp"
 #include "src/structs/board_coord.hpp"
 
@@ -6,6 +7,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iterator>
+#include <random>
 #include <set>
 #include <type_traits>
 #include <utility>
@@ -105,7 +107,8 @@ TEST(GameTest, RandomGeneratedFieldHasCorrectNumberOfMines) {
 }
 
 TEST(GameTest, RandomLayoutProducesRequestedMineCount) {
-    Game::MineLayout layout = Game::randomLayout(static_cast<int>(Game::kFieldSize * Game::kFieldSize));
+    std::mt19937 rng{1};
+    Game::MineLayout layout = randomLayout<Game::kFieldSize>(Game::kFieldSize * Game::kFieldSize, rng);
 
     size_t num_mines = 0;
     for (size_t i = 0; i < Game::kFieldSize; i++) {
@@ -116,10 +119,26 @@ TEST(GameTest, RandomLayoutProducesRequestedMineCount) {
     EXPECT_EQ(num_mines, Game::kFieldSize * Game::kFieldSize);
 }
 
-TEST(GameTest, RandomLayoutAssertsWhenMineCountExceedsBoardSize) {
-    EXPECT_DEATH(
-        Game::randomLayout(static_cast<int>(Game::kFieldSize * Game::kFieldSize) + 1),
-        "");
+TEST(GameTest, RandomLayoutClampsMineCountToBoardSize) {
+    std::mt19937 rng{1};
+    Game::MineLayout layout = randomLayout<Game::kFieldSize>(Game::kFieldSize * Game::kFieldSize + 1, rng);
+
+    size_t num_mines = 0;
+    for (size_t i = 0; i < Game::kFieldSize; i++) {
+        for (size_t j = 0; j < Game::kFieldSize; j++) {
+            if (layout[i][j]) ++num_mines;
+        }
+    }
+    EXPECT_EQ(num_mines, Game::kFieldSize * Game::kFieldSize);
+}
+
+TEST(GameTest, RandomLayoutIsDeterministicForAFixedSeed) {
+    std::mt19937 rng_a{42};
+    std::mt19937 rng_b{42};
+    Game::MineLayout layout_a = randomLayout<Game::kFieldSize>(Game::kNumMines, rng_a);
+    Game::MineLayout layout_b = randomLayout<Game::kFieldSize>(Game::kNumMines, rng_b);
+
+    EXPECT_EQ(layout_a, layout_b);
 }
 
 TEST(GameTest, HittingANumberCellOnlyRevealsThisCell) {

@@ -4,10 +4,7 @@
 #include <optional>
 #include "../structs/board_coord.hpp"
 #include "../enums/field_type.hpp"
-
-#ifndef FRIEND_TEST
-#define FRIEND_TEST(test_case_name, test_name) friend class test_case_name##_##test_name##_Test
-#endif
+#include "random_layout.hpp"
 
 struct Playerield
 {
@@ -56,16 +53,12 @@ class Game {
 
         explicit Game(const MineLayout& mines);
 
-        Game() : Game(randomLayout(kNumMines)) {};
+        Game() : Game(randomLayout<kFieldSize>(kNumMines, defaultRng())) {};
     private:
-        FRIEND_TEST(GameTest, RandomLayoutProducesRequestedMineCount);
-        FRIEND_TEST(GameTest, RandomLayoutAssertsWhenMineCountExceedsBoardSize);
 
         void createNewGame(const MineLayout& mines);
 
         void updateNearbyMineNumbers();
-
-        static MineLayout randomLayout(int mine_count);
 
         void updateFieldsAroundMine(size_t row, size_t column);
 
