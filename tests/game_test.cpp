@@ -13,6 +13,8 @@
 
 #include <gtest/gtest.h>
 
+static_assert(std::is_copy_assignable_v<Game>);
+
 namespace {
 
     Game::Board getEmptyRevealedBoard() {
@@ -38,10 +40,6 @@ namespace {
     }
 
 }  // namespace
-
-TEST(GameTest, IsCopyAssignable) {
-    static_assert(std::is_copy_assignable_v<Game>);
-}
 
 TEST(GameTest, MineInCornerIsHandledCorrectly) {
     Game::Board expected = getEmptyRevealedBoard();
