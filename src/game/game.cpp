@@ -1,5 +1,5 @@
 #include "game.hpp"
-#include "../enums/field_type.hpp"
+
 #include "../structs/board_coord.hpp"
 
 #include <algorithm>
