@@ -35,3 +35,25 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  lint:
+    name: clang-tidy (misc-include-cleaner)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Run clang-tidy
+        run: >
+          clang-tidy -p build
+          --checks='-*,misc-include-cleaner'
+          --warnings-as-errors='*'
+          src/game/game.cpp src/tui/tui.cpp src/button/button.cpp src/main.cpp
+          tests/game_test.cpp tests/tui_test.cpp
