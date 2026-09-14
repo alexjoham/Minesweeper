@@ -13,15 +13,22 @@ target_compile_options(ms_warnings INTERFACE
 
 add_library(ms_core
     src/game/game.cpp
-    src/tui/tui.cpp
-    src/button/button.cpp
 )
 target_include_directories(ms_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(ms_core PUBLIC cxx_std_20)
 target_link_libraries(ms_core PRIVATE ms_warnings)
 
+add_library(ms_tui
+    src/tui/tui.cpp
+    src/button/button.cpp
+)
+target_include_directories(ms_tui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_features(ms_tui PUBLIC cxx_std_20)
+target_link_libraries(ms_tui PUBLIC ms_core PRIVATE ms_warnings)
+
 add_executable(minesweeper src/main.cpp)
-target_link_libraries(minesweeper PRIVATE ms_core ms_warnings)
+target_link_libraries(minesweeper PRIVATE ms_tui ms_warnings)
+
 
 include(FetchContent)
 FetchContent_Declare(
@@ -41,5 +48,5 @@ add_executable(ms_tests
     tests/game_test.cpp
     tests/tui_test.cpp
 )
-target_link_libraries(ms_tests PRIVATE ms_core ms_warnings GTest::gtest_main)
+target_link_libraries(ms_tests PRIVATE ms_tui ms_warnings GTest::gtest_main)
 gtest_discover_tests(ms_tests)
