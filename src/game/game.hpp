@@ -49,7 +49,7 @@ class Game {
             return std::nullopt;
         }
 
-        bool game_won();
+        bool game_won() const;
 
         explicit Game(const MineLayout& mines);
 

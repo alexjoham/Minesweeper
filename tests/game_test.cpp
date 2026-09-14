@@ -215,3 +215,112 @@ TEST(GameTest, ToggleFlagOnNonMineCellThatMakeMoveConsumedReturnsNullopt) {
     game.makeMove(3, 3);
     EXPECT_FALSE(game.toggleFlag(3, 3).has_value());
 }
+
+TEST(GameTest, RestartSetsNewBoardWithAllCellsHidden) {
+    Game game = Game(layoutWith({ {4,4} }));
+    game.makeMove(4, 4);
+    game.restart();
+    Game::Board board = game.getPlayerfield();
+    for (size_t i = 0; i < Game::kFieldSize; i++) {
+        for (size_t j = 0; j < Game::kFieldSize; j++) {
+            EXPECT_EQ(board[i][j].fieldType, FieldType::HIDDEN) << "at (" << i << "," << j << ")";
+            EXPECT_TRUE(board[i][j].hidden);
+        }
+    }
+}
+
+TEST(GameTest, RestartClearsFlaggedCells) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    ASSERT_TRUE(game.toggleFlag(0, 0).has_value());
+    game.restart();
+    Game::Board board = game.getPlayerfield();
+    for (size_t i = 0; i < Game::kFieldSize; i++) {
+        for (size_t j = 0; j < Game::kFieldSize; j++) {
+            EXPECT_FALSE(board[i][j].flagged) << "at (" << i << "," << j << ")";
+        }
+    }
+}
+
+TEST(GameTest, MakeMoveWithOutOfRangeRowReturnsNoRevealedCells) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    EXPECT_TRUE(game.makeMove(Game::kFieldSize, 0).empty());
+}
+
+TEST(GameTest, MakeMoveWithOutOfRangeColumnReturnsNoRevealedCells) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    EXPECT_TRUE(game.makeMove(0, Game::kFieldSize).empty());
+}
+
+TEST(GameTest, MakeMoveOnAlreadyRevealedCellReturnsNoRevealedCells) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    ASSERT_EQ(game.makeMove(3, 3).size(), 1u);
+    EXPECT_TRUE(game.makeMove(3, 3).empty());
+}
+
+TEST(GameTest, RevealAllOnlyRevealsStillHiddenCells) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    ASSERT_EQ(game.makeMove(3, 3).size(), 1u);
+
+    std::vector<RevealedCell> revealed_by_reveal_all = game.revealAll();
+    EXPECT_EQ(revealed_by_reveal_all.size(), Game::kFieldSize * Game::kFieldSize - 1);
+
+    bool contains_already_revealed_cell = std::any_of(
+        revealed_by_reveal_all.begin(), revealed_by_reveal_all.end(),
+        [](const RevealedCell& cell) { return cell.coordinates.row == 3 && cell.coordinates.column == 3; });
+    EXPECT_FALSE(contains_already_revealed_cell);
+}
+
+TEST(GameTest, ToggleFlagTwiceReturnsCellToUnflagged) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+
+    std::optional<Playerield> first_toggle = game.toggleFlag(0, 0);
+    ASSERT_TRUE(first_toggle.has_value());
+    EXPECT_TRUE(first_toggle->flagged);
+
+    std::optional<Playerield> second_toggle = game.toggleFlag(0, 0);
+    ASSERT_TRUE(second_toggle.has_value());
+    EXPECT_FALSE(second_toggle->flagged);
+}
+
+TEST(GameTest, GameWonIsFalseOnAFreshBoard) {
+    Game game = Game(layoutWith({ { 8, 8 } }));
+    EXPECT_FALSE(game.game_won());
+}
+
+TEST(GameTest, GameWonIsFalseWhileNonMineCellsRemainHidden) {
+    Game game = Game(layoutWith({ { 4, 4 } }));
+    ASSERT_EQ(game.makeMove(3, 3).size(), 1u);
+    EXPECT_FALSE(game.game_won());
+}
+
+TEST(GameTest, GameWonIsTrueOnceEveryNonMineCellIsRevealed) {
+    Game game = Game(layoutWith({ { 8, 8 } }));
+    game.makeMove(0, 0);
+    EXPECT_TRUE(game.game_won());
+}
+
+TEST(GameTest, MakeMoveFloodFillStopsAtNumberedBoundaryLeavingSurroundedCellsHidden) {
+    Game game = Game(layoutWith({
+        { 3, 3 }, { 3, 4 }, { 3, 5 },
+        { 4, 3 },           { 4, 5 },
+        { 5, 3 }, { 5, 4 }, { 5, 5 },
+    }));
+    game.makeMove(0, 0);
+    Game::Board board = game.getPlayerfield();
+
+    // The 8 mines plus the fully mine-surrounded centre cell are never
+    // adjacent to a NEUTRAL cell, so flood fill from a distant corner
+    // cannot reach them; everything else on the board is connected to
+    // that corner and gets revealed.
+    std::set<std::pair<size_t, size_t>> expected_still_hidden = {
+        { 3, 3 }, { 3, 4 }, { 3, 5 },
+        { 4, 3 }, { 4, 4 }, { 4, 5 },
+        { 5, 3 }, { 5, 4 }, { 5, 5 },
+    };
+    for (size_t i = 0; i < Game::kFieldSize; i++) {
+        for (size_t j = 0; j < Game::kFieldSize; j++) {
+            bool should_be_hidden = expected_still_hidden.count({ i, j }) > 0;
+            EXPECT_EQ(board[i][j].hidden, should_be_hidden) << "at (" << i << ", " << j << ")";
+        }
+    }
+}

@@ -127,7 +127,7 @@ std::vector<RevealedCell> Game::revealAll() {
     return revealedButtons;
 }
 
-bool Game::game_won() {
+bool Game::game_won() const {
     for (size_t i = 0; i < kFieldSize; i++) {
         for(size_t j = 0; j < kFieldSize; j++) {
             if(playerfield_[i][j].hidden) {
