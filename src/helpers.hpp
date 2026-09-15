@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <sys/types.h>
 #include <unistd.h>
 
 inline void emit_terminal_command(const std::string& s) {
