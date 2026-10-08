@@ -72,11 +72,11 @@ jobs:
 
       - name: Run clang-tidy
         run: >
-          clang-tidy-18 -p build
-          --checks='-*,misc-include-cleaner'
-          --warnings-as-errors='*'
-          src/game/game.cpp src/tui/tui.cpp src/button/button.cpp src/main.cpp
-          tests/game_test.cpp tests/tui_test.cpp
+          run-clang-tidy-18 -p build -quiet
+          -clang-tidy-binary clang-tidy-18
+          -checks='-*,misc-include-cleaner'
+          -warnings-as-errors='*'
+          '^${{ github.workspace }}/(src|tests)/'
 
   format:
     name: clang-format
