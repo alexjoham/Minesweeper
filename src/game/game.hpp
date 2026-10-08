@@ -4,6 +4,7 @@
 #include "random_layout.hpp"
 
 #include <array>
+#include <cstddef>
 #include <optional>
 #include <vector>
 
