@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <optional>
 #include <string_view>
-#include <vector>
 
 class Tui {
 private:
