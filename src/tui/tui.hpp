@@ -1,12 +1,11 @@
 #pragma once
+#include "../enums/field_type.hpp"
 #include "../game/game.hpp"
-#include "../helpers.hpp"
 #include "../structs/board_coord.hpp"
 
-#include <memory>
+#include <cstddef>
 #include <optional>
 #include <string_view>
-#include <vector>
 
 class Tui {
 private:
