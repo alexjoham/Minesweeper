@@ -4,7 +4,6 @@
 #include "../structs/board_coord.hpp"
 
 #include <cstddef>
-#include <memory>
 #include <optional>
 #include <string_view>
 #include <vector>
