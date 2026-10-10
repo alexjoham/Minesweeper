@@ -48,9 +48,16 @@ using InputEvent = std::variant<KeyEvent, MouseEvent>;
 
 class SgrParser {
 public:
-    // Stub: returns no event until the state machine in docs/sgr-parser.md is implemented.
-    [[nodiscard]] constexpr std::optional<InputEvent> feed([[maybe_unused]] std::uint8_t byte) noexcept {
-        return std::nullopt;
+    // Ground only so far: ESC and the sequence states in docs/sgr-parser.md are not implemented yet.
+    [[nodiscard]] constexpr std::optional<InputEvent> feed(std::uint8_t byte) noexcept {
+        switch (byte) {
+            case 0x7F: // DEL
+            case 0x18: // CAN
+            case 0x1A: // SUB
+                return std::nullopt;
+            default:
+                return KeyEvent{byte};
+        }
     }
 
 private:
