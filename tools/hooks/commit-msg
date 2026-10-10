@@ -1,0 +1,17 @@
+#!/bin/sh
+# Reject a commit whose message body has a line longer than 72 characters.
+# Lines containing a URL are exempt, since a URL can't be wrapped.
+#
+# Git passes the path of the message file as $1, before stripping comments,
+# so '#' lines are skipped, and so is everything below the scissors line
+# that `git commit -v` adds above the diff.
+
+awk '
+    /^# -+ >8 -+$/ { exit }
+    /^#/ { next }
+    NR > 1 && length($0) > 72 && $0 !~ /:\/\// {
+        printf "commit-msg: line %d is %d characters (max 72):\n  %s\n", NR, length($0), $0
+        bad = 1
+    }
+    END { exit bad }
+' "$1" >&2
