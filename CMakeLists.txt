@@ -73,6 +73,7 @@ include(GoogleTest)
 add_executable(ms_tests
     tests/game_test.cpp
     tests/tui_test.cpp
+    tests/sgr_parser_test.cpp
 )
 target_link_libraries(ms_tests PRIVATE ms_tui ms_input ms_warnings GTest::gtest_main)
 gtest_discover_tests(ms_tests)
