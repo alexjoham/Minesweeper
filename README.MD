@@ -117,7 +117,8 @@ A mouse is required. The program puts the terminal into raw mode and enables SGR
 ## Build, run, test
 
 Once per clone, enable the repository's git hooks. The `commit-msg` hook rejects commit messages
-with body lines over 72 characters:
+with any line over 72 characters, the subject included. The `pre-commit` hook rejects staged C++
+files that `clang-format` would change (set `CLANG_FORMAT` to pick the binary; CI uses 18):
 
 ```bash
 git config core.hooksPath tools/hooks

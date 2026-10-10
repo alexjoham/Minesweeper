@@ -1,5 +1,6 @@
 #!/bin/sh
-# Reject a commit whose message body has a line longer than 72 characters.
+# Reject a commit whose message has a line longer than 72 characters,
+# the subject line included.
 # Lines containing a URL are exempt, since a URL can't be wrapped.
 #
 # Git passes the path of the message file as $1, before stripping comments,
@@ -9,7 +10,7 @@
 awk '
     /^# -+ >8 -+$/ { exit }
     /^#/ { next }
-    NR > 1 && length($0) > 72 && $0 !~ /:\/\// {
+    length($0) > 72 && $0 !~ /:\/\// {
         printf "commit-msg: line %d is %d characters (max 72):\n  %s\n", NR, length($0), $0
         bad = 1
     }
