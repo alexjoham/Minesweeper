@@ -78,3 +78,113 @@ TEST(SgrParserTest, SubInGroundGivesNoEvent) {
     ASSERT_EQ(ev.count, 1U);
     EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
 }
+
+TEST(SgrParserTest, EscThenKeyGivesThatKey) {
+    const auto ev = parse_all("\x1b"
+                              "q"); // Alt+q, or Esc then q
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'q'}});
+}
+
+TEST(SgrParserTest, EscThenHighByteGivesThatByte) {
+    const auto ev = parse_all("\x1b"
+                              "\xc3");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{0xC3}});
+}
+
+// Several tests below continue with "OPa": O enters Ss3 only if the
+// parser is still in Escape, so the output shows which state it was in.
+TEST(SgrParserTest, SecondEscRestartsTheSequence) {
+    const auto ev = parse_all("\x1b"
+                              "\x1b"
+                              "OPa");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, CanInEscapeReturnsToGround) {
+    const auto ev = parse_all("\x1b"
+                              "\x18"
+                              "O");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'O'}});
+}
+
+TEST(SgrParserTest, SubInEscapeReturnsToGround) {
+    const auto ev = parse_all("\x1b"
+                              "\x1a"
+                              "O");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'O'}});
+}
+
+TEST(SgrParserTest, DelInEscapeIsIgnored) {
+    const auto ev = parse_all("\x1b"
+                              "\x7f"
+                              "OPa");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, C0InEscapeIsReportedAndKeepsState) {
+    const auto ev = parse_all("\x1b"
+                              "\x03" // Ctrl+C
+                              "OPa");
+    ASSERT_EQ(ev.count, 2U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{0x03}});
+    EXPECT_EQ(ev.items[1], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, Ss3SwallowsOneByte) {
+    const auto ev = parse_all("\x1b"  //
+                              "OPa"); // F1, then a
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, EscInSs3RestartsTheSequence) {
+    const auto ev = parse_all("\x1b"
+                              "O"
+                              "\x1b"
+                              "OPa");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, CanInSs3ReturnsToGround) {
+    const auto ev = parse_all("\x1b"
+                              "O"
+                              "\x18"
+                              "a");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, DelInSs3IsIgnored) {
+    const auto ev = parse_all("\x1b"
+                              "O"
+                              "\x7f"
+                              "Pa");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, C0InSs3IsReportedAndKeepsState) {
+    const auto ev = parse_all("\x1b"
+                              "O"
+                              "\x03" // Ctrl+C
+                              "Pa");
+    ASSERT_EQ(ev.count, 2U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{0x03}});
+    EXPECT_EQ(ev.items[1], InputEvent{KeyEvent{'a'}});
+}
+
+// Known trade-off (docs/sgr-parser.md, "ESC O"): without a timeout,
+// Alt+Shift+O followed by a key loses that key.
+TEST(SgrParserTest, Ss3SwallowsOrdinaryKey) {
+    const auto ev = parse_all("\x1b"
+                              "Oqa");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
