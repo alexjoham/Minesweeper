@@ -3,9 +3,11 @@
 #include "enums/game_state.hpp"
 #include "game/game.hpp"
 #include "helpers.hpp"
+#include "input/sgr_parser.hpp"
 #include "tui/tui.hpp"
 
 #include <csignal>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
@@ -14,6 +16,7 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
+#include <variant>
 #include <vector>
 
 constexpr int PLAYING_FIELD_X = 2;
@@ -100,6 +103,122 @@ static void drawGameRules(int x, int y) {
                                          "(vertically, horizontally and diagonally.\x1b[0m");
 }
 
+static void handle_key(std::uint8_t key, bool& running) {
+    if (key == 'q' || key == 3 /* Ctrl+C */) {
+        running = false;
+    } else if (key == 'r') {
+        state = GameState::GAME;
+        game.restart();
+        clear_screen();
+        drawGameInfo();
+        tui.drawGame(game.getPlayerfield());
+    }
+}
+
+static void handle_mouse(const MouseEvent& mouse, std::vector<std::unique_ptr<Button>>& buttons, int start_id,
+                         int quit_id, bool& running) {
+    // Only left press and release matter; drag, wheel and the other buttons are ignored.
+    if (mouse.button != MouseButton::Left || mouse.action == MouseAction::Motion) {
+        return;
+    }
+    // Button and Tui take the screen row first, then the column.
+    const int row = mouse.row;
+    const int column = mouse.column;
+
+    if (mouse.action == MouseAction::Press) {
+        for (auto& b : buttons)
+            b->press(row, column);
+        flag_button.press(row, column);
+        return;
+    }
+
+    switch (state) {
+        case GameState::MENU: {
+            bool switch_to_game = false;
+            bool quit_clicked = false;
+            for (auto& b : buttons) {
+                if (b->release(row, column)) {
+                    if (b->getID() == start_id) {
+                        switch_to_game = true;
+                    } else if (b->getID() == quit_id) {
+                        quit_clicked = true;
+                    }
+                }
+            }
+            if (quit_clicked) {
+                running = false;
+                return;
+            }
+            if (switch_to_game) {
+                state = GameState::GAME;
+                clear_screen();
+                drawGameInfo();
+                int height = tui.drawGame(game.getPlayerfield());
+                drawGameRules(PLAYING_FIELD_X + height, PLAYING_FIELD_Y);
+                return;
+            }
+            draw_all(buttons);
+            break;
+        }
+        case GameState::GAME: {
+            if (flag_button.release(row, column)) {
+                set_flag = !set_flag;
+                if (set_flag) {
+                    flag_button.setColor("\x1b[7m");
+                } else {
+                    flag_button.setColor("\x1b[93m");
+                }
+                drawGameInfo();
+                tui.drawGame(game.getPlayerfield());
+                return;
+            }
+            bool game_lost = false;
+            if (!set_flag) {
+                if (auto cell = tui.boardCellAt(row, column)) {
+                    auto result = game.makeMove(cell->row, cell->column);
+                    if (result.size() > 0) {
+                        if (result.size() == 1 && result.front().cell.fieldType == FieldType::MINE) {
+                            result = game.revealAll();
+                            game_lost = true;
+                        }
+                    }
+                }
+            } else {
+                if (auto cell = tui.boardCellAt(row, column)) {
+                    game.toggleFlag(cell->row, cell->column);
+                }
+            }
+            if (game_lost) {
+                state = GameState::LOST;
+                drawGameLost();
+                tui.drawGame(game.getPlayerfield());
+                return;
+            }
+            if (game.game_won()) {
+                game.revealAll();
+                drawGameWon();
+                tui.drawGame(game.getPlayerfield());
+                state = GameState::WON;
+                return;
+            }
+            drawGameInfo();
+            int height = tui.drawGame(game.getPlayerfield());
+            drawGameRules(PLAYING_FIELD_X + height, PLAYING_FIELD_Y);
+            break;
+        }
+        case GameState::LOST:
+            drawGameLost();
+            tui.drawGame(game.getPlayerfield());
+            break;
+        case GameState::WON:
+            drawGameWon();
+            tui.drawGame(game.getPlayerfield());
+            break;
+        default:
+            break;
+    }
+}
+
 int main() {
     setup_terminal();
 
@@ -107,151 +226,27 @@ int main() {
     buttons.push_back(std::make_unique<LabelButton>(6, 3, 14, "Start", "\x1b[48;5;24m\x1b[97m"));
     const int start_id = buttons.back()->getID();
     buttons.push_back(std::make_unique<LabelButton>(6, 35, 14, "Quit", "\x1b[48;5;52m\x1b[97m"));
-    const int guit_id = buttons.back()->getID();
+    const int quit_id = buttons.back()->getID();
     draw_all(buttons);
 
     bool running = true;
-    std::string buf;
+    // One parser for the whole run: a sequence split across two reads must continue.
+    SgrParser parser;
 
     while (running) {
-        char c;
-        ssize_t n = ::read(STDIN_FILENO, &c, 1);
+        std::uint8_t byte = 0;
+        const ssize_t n = ::read(STDIN_FILENO, &byte, 1);
         if (n <= 0)
             break;
-        buf.push_back(c);
 
-        if (buf.size() == 1 && c != '\x1b') {
-            if (c == 'q' || c == 3 /* Ctrl+C */)
-                running = false;
-            if (c == 'r') {
-                state = GameState::GAME;
-                game.restart();
-                clear_screen();
-                drawGameInfo();
-                tui.drawGame(game.getPlayerfield());
-                buf.clear();
-                continue;
-            }
-            buf.clear();
+        const auto event = parser.feed(byte);
+        if (!event)
             continue;
+        if (const auto* key = std::get_if<KeyEvent>(&*event)) {
+            handle_key(key->byte, running);
+        } else if (const auto* mouse = std::get_if<MouseEvent>(&*event)) {
+            handle_mouse(*mouse, buttons, start_id, quit_id, running);
         }
-
-        if ((buf.size() == 2 && c != '[') || (buf.size() == 3 && c != '<')) {
-            buf.clear();
-            continue;
-        }
-        if (buf.size() < 4)
-            continue;
-
-        if (c == 'M' || c == 'm') {
-            int btn = 0, mx = 0, my = 0;
-            bool parsed = std::sscanf(buf.c_str(), "\x1b[<%d;%d;%d", &btn, &my, &mx) == 3;
-            buf.clear();
-            if (parsed) {
-                bool press = (c == 'M');
-                bool motion = (btn & 0x20) != 0; // drag, not a fresh click
-                bool wheel = (btn & 0x40) != 0;
-                bool is_left = (btn & 0x03) == 0;
-
-                if (!motion && !wheel && is_left) {
-                    if (press) {
-                        for (auto& b : buttons)
-                            b->press(mx, my);
-                        flag_button.press(mx, my);
-                    } else {
-                        switch (state) {
-                            case GameState::MENU: {
-                                bool switch_to_game = false;
-                                bool quit_clicked = false;
-                                for (auto& b : buttons) {
-                                    if (b->release(mx, my)) {
-                                        if (b->getID() == start_id) {
-                                            switch_to_game = true;
-                                        } else if (b->getID() == guit_id) {
-                                            quit_clicked = true;
-                                        }
-                                    }
-                                }
-                                if (quit_clicked) {
-                                    running = false;
-                                    buf.clear();
-                                    continue;
-                                }
-                                if (switch_to_game) {
-                                    state = GameState::GAME;
-                                    clear_screen();
-                                    drawGameInfo();
-                                    int height = tui.drawGame(game.getPlayerfield());
-                                    drawGameRules(PLAYING_FIELD_X + height, PLAYING_FIELD_Y);
-                                    continue;
-                                }
-                                draw_all(buttons);
-                                break;
-                            }
-                            case GameState::GAME: {
-                                if (flag_button.release(mx, my)) {
-                                    set_flag = !set_flag;
-                                    if (set_flag) {
-                                        flag_button.setColor("\x1b[7m");
-                                    } else {
-                                        flag_button.setColor("\x1b[93m");
-                                    }
-                                    drawGameInfo();
-                                    tui.drawGame(game.getPlayerfield());
-                                    continue;
-                                }
-                                bool game_lost = false;
-                                if (!set_flag) {
-                                    if (auto cell = tui.boardCellAt(mx, my)) {
-                                        auto result = game.makeMove(cell->row, cell->column);
-                                        if (result.size() > 0) {
-                                            if (result.size() == 1 &&
-                                                result.front().cell.fieldType == FieldType::MINE) {
-                                                result = game.revealAll();
-                                                game_lost = true;
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    if (auto cell = tui.boardCellAt(mx, my)) {
-                                        game.toggleFlag(cell->row, cell->column);
-                                    }
-                                }
-                                if (game_lost) {
-                                    state = GameState::LOST;
-                                    drawGameLost();
-                                    tui.drawGame(game.getPlayerfield());
-                                    continue;
-                                } else if (game.game_won()) {
-                                    game.revealAll();
-                                    drawGameWon();
-                                    tui.drawGame(game.getPlayerfield());
-                                    state = GameState::WON;
-                                    continue;
-                                }
-                                drawGameInfo();
-                                int height = tui.drawGame(game.getPlayerfield());
-                                drawGameRules(PLAYING_FIELD_X + height, PLAYING_FIELD_Y);
-                                break;
-                            }
-                            case GameState::LOST:
-                                drawGameLost();
-                                tui.drawGame(game.getPlayerfield());
-                                break;
-                            case GameState::WON:
-                                drawGameWon();
-                                tui.drawGame(game.getPlayerfield());
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (buf.size() > 32)
-            buf.clear(); // give up on a malformed sequence
     }
 
     restore_terminal();
