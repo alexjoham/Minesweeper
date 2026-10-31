@@ -29,6 +29,12 @@ enum class MouseButton : std::uint8_t {
     Button11,
 };
 
+// decode_button() computes a button as first + the low two bits of the
+// code, so each group of four must stay consecutive and in this order.
+static_assert(static_cast<int>(MouseButton::None) == static_cast<int>(MouseButton::Left) + 3);
+static_assert(static_cast<int>(MouseButton::WheelRight) == static_cast<int>(MouseButton::WheelUp) + 3);
+static_assert(static_cast<int>(MouseButton::Button11) == static_cast<int>(MouseButton::Button8) + 3);
+
 enum class MouseAction : std::uint8_t { Press, Release, Motion };
 
 struct MouseEvent {
@@ -155,10 +161,7 @@ private:
         if (!complete || column == 0 || row == 0) {
             return std::nullopt;
         }
-        if (const auto event = decode_button(params_[0], release, row, column)) {
-            return *event;
-        }
-        return std::nullopt;
+        return decode_button(params_[0], release, row, column);
     }
 
     // Button code table of docs/sgr-parser.md: the low bits 0-3 select the
