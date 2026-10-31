@@ -1,6 +1,7 @@
 #include "src/game/game.hpp"
 
 #include "src/enums/field_type.hpp"
+#include "src/enums/game_outcome.hpp"
 #include "src/game/random_layout.hpp"
 #include "src/structs/board_coord.hpp"
 
@@ -313,6 +314,99 @@ TEST(GameTest, GameWonIsTrueOnceEveryNonMineCellIsRevealed) {
     Game game = Game(layoutWith({{8, 8}}));
     game.makeMove(0, 0);
     EXPECT_TRUE(game.game_won());
+}
+
+// revealAll() leaves no hidden cell, which used to make game_won() true on
+// a board the player had just lost.
+TEST(GameTest, GameWonIsFalseAfterALoss) {
+    Game game = Game(layoutWith({{4, 4}}));
+    ASSERT_EQ(game.makeMove(4, 4).size(), 1u); // the mine
+    game.revealAll();
+    EXPECT_FALSE(game.game_won());
+}
+
+TEST(GameTest, OutcomeIsPlayingOnAFreshBoard) {
+    Game game = Game(layoutWith({{8, 8}}));
+    EXPECT_EQ(game.outcome(), GameOutcome::Playing);
+}
+
+TEST(GameTest, OutcomeIsPlayingWhileSafeCellsRemainHidden) {
+    Game game = Game(layoutWith({{4, 4}}));
+    ASSERT_EQ(game.makeMove(3, 3).size(), 1u);
+    EXPECT_EQ(game.outcome(), GameOutcome::Playing);
+}
+
+// The loss is decided by makeMove itself, without revealAll().
+TEST(GameTest, OutcomeIsLostTheMomentAMineIsRevealed) {
+    Game game = Game(layoutWith({{4, 4}}));
+    ASSERT_EQ(game.makeMove(4, 4).size(), 1u);
+    EXPECT_EQ(game.outcome(), GameOutcome::Lost);
+    EXPECT_FALSE(game.game_won());
+}
+
+TEST(GameTest, OutcomeIsWonOnceEverySafeCellIsRevealed) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.makeMove(0, 0);
+    EXPECT_EQ(game.outcome(), GameOutcome::Won);
+}
+
+// main() calls revealAll() after a win to show the mines.
+TEST(GameTest, RevealAllKeepsTheWonOutcome) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.makeMove(0, 0);
+    game.revealAll();
+    EXPECT_EQ(game.outcome(), GameOutcome::Won);
+}
+
+TEST(GameTest, RevealAllDoesNotDecideAFreshGame) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.revealAll();
+    EXPECT_EQ(game.outcome(), GameOutcome::Playing);
+    EXPECT_FALSE(game.game_won());
+}
+
+TEST(GameTest, RestartResetsALostOutcome) {
+    Game game = Game(layoutWith({{4, 4}}));
+    game.makeMove(4, 4);
+    ASSERT_EQ(game.outcome(), GameOutcome::Lost);
+    game.restart();
+    EXPECT_EQ(game.outcome(), GameOutcome::Playing);
+}
+
+// Once the outcome is decided the board is frozen. revealAll() stays
+// allowed: the UI uses it to show the board.
+TEST(GameTest, MakeMoveAfterALossRevealsNothing) {
+    Game game = Game(layoutWith({{4, 4}}));
+    game.makeMove(4, 4);
+    ASSERT_EQ(game.outcome(), GameOutcome::Lost);
+    EXPECT_TRUE(game.makeMove(0, 0).empty());
+    EXPECT_TRUE(game.getPlayerfield()[0][0].hidden);
+}
+
+// After a win only mines are hidden, so a move would reveal one and turn
+// the win into a loss.
+TEST(GameTest, MakeMoveAfterAWinChangesNothing) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.makeMove(0, 0);
+    ASSERT_EQ(game.outcome(), GameOutcome::Won);
+    EXPECT_TRUE(game.makeMove(8, 8).empty());
+    EXPECT_EQ(game.outcome(), GameOutcome::Won);
+}
+
+TEST(GameTest, ToggleFlagAfterALossReturnsNullopt) {
+    Game game = Game(layoutWith({{4, 4}}));
+    game.makeMove(4, 4);
+    ASSERT_EQ(game.outcome(), GameOutcome::Lost);
+    EXPECT_FALSE(game.toggleFlag(0, 0).has_value());
+    EXPECT_FALSE(game.getPlayerfield()[0][0].flagged);
+}
+
+TEST(GameTest, ToggleFlagAfterAWinReturnsNullopt) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.makeMove(0, 0);
+    ASSERT_EQ(game.outcome(), GameOutcome::Won);
+    EXPECT_FALSE(game.toggleFlag(8, 8).has_value());
+    EXPECT_FALSE(game.getPlayerfield()[8][8].flagged);
 }
 
 TEST(GameTest, MakeMoveFloodFillStopsAtNumberedBoundaryLeavingSurroundedCellsHidden) {
