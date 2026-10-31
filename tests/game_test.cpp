@@ -373,6 +373,42 @@ TEST(GameTest, RestartResetsALostOutcome) {
     EXPECT_EQ(game.outcome(), GameOutcome::Playing);
 }
 
+// Once the outcome is decided the board is frozen. revealAll() stays
+// allowed: the UI uses it to show the board.
+TEST(GameTest, MakeMoveAfterALossRevealsNothing) {
+    Game game = Game(layoutWith({{4, 4}}));
+    game.makeMove(4, 4);
+    ASSERT_EQ(game.outcome(), GameOutcome::Lost);
+    EXPECT_TRUE(game.makeMove(0, 0).empty());
+    EXPECT_TRUE(game.getPlayerfield()[0][0].hidden);
+}
+
+// After a win only mines are hidden, so a move would reveal one and turn
+// the win into a loss.
+TEST(GameTest, MakeMoveAfterAWinChangesNothing) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.makeMove(0, 0);
+    ASSERT_EQ(game.outcome(), GameOutcome::Won);
+    EXPECT_TRUE(game.makeMove(8, 8).empty());
+    EXPECT_EQ(game.outcome(), GameOutcome::Won);
+}
+
+TEST(GameTest, ToggleFlagAfterALossReturnsNullopt) {
+    Game game = Game(layoutWith({{4, 4}}));
+    game.makeMove(4, 4);
+    ASSERT_EQ(game.outcome(), GameOutcome::Lost);
+    EXPECT_FALSE(game.toggleFlag(0, 0).has_value());
+    EXPECT_FALSE(game.getPlayerfield()[0][0].flagged);
+}
+
+TEST(GameTest, ToggleFlagAfterAWinReturnsNullopt) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.makeMove(0, 0);
+    ASSERT_EQ(game.outcome(), GameOutcome::Won);
+    EXPECT_FALSE(game.toggleFlag(8, 8).has_value());
+    EXPECT_FALSE(game.getPlayerfield()[8][8].flagged);
+}
+
 TEST(GameTest, MakeMoveFloodFillStopsAtNumberedBoundaryLeavingSurroundedCellsHidden) {
     Game game = Game(layoutWith({
         {3, 3},
