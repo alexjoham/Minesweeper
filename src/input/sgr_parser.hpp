@@ -141,22 +141,62 @@ private:
         }
         if (byte == 'M' || byte == 'm') {
             state_ = SgrState::Ground;
-            return report(byte == 'M' ? MouseAction::Press : MouseAction::Release);
+            return report(byte == 'm');
         }
         state_ = is_final(byte) ? SgrState::Ground : SgrState::Discard;
         return std::nullopt;
     }
 
-    // Group 3 only knows button code 0 (Left). Every other code is
-    // rejected until the button code decoding of group 4 is in.
-    [[nodiscard]] constexpr std::optional<InputEvent> report(MouseAction action) const noexcept {
+    // The final byte is already known to be M or m; `release` is true for m.
+    [[nodiscard]] constexpr std::optional<InputEvent> report(bool release) const noexcept {
         const bool complete = index_ == 2 && digits_ > 0;
         const std::uint16_t column = params_[1];
         const std::uint16_t row = params_[2];
-        if (!complete || column == 0 || row == 0 || params_[0] != 0) {
+        if (!complete || column == 0 || row == 0) {
             return std::nullopt;
         }
-        return MouseEvent{MouseButton::Left, action, false, false, false, row, column};
+        if (const auto event = decode_button(params_[0], release, row, column)) {
+            return *event;
+        }
+        return std::nullopt;
+    }
+
+    // Button code table of docs/sgr-parser.md: the low bits 0-3 select the
+    // button, 4/8/16 are shift/meta/ctrl, 32 is motion, 64 the wheel and
+    // 128 buttons 8-11. Returns nullopt for a combination a terminal never
+    // sends.
+    [[nodiscard]] static constexpr std::optional<MouseEvent>
+    decode_button(std::uint16_t code, bool release, std::uint16_t row, std::uint16_t column) noexcept {
+        const bool wheel = (code & 64) != 0;
+        const bool extra = (code & 128) != 0;
+        const bool motion = (code & 32) != 0;
+        if (code > 255 || (wheel && extra)) { // 192-255 and above
+            return std::nullopt;
+        }
+        if (motion && release) { // motion always ends in M
+            return std::nullopt;
+        }
+        if (wheel && (motion || release)) { // the wheel only sends presses
+            return std::nullopt;
+        }
+        const auto low = static_cast<std::uint8_t>(code & 3);
+        MouseButton first = MouseButton::Left;
+        if (wheel) {
+            first = MouseButton::WheelUp;
+        } else if (extra) {
+            first = MouseButton::Button8;
+        }
+        const auto button = static_cast<MouseButton>(static_cast<std::uint8_t>(first) + low);
+        if (button == MouseButton::None && !motion) { // never reported without motion
+            return std::nullopt;
+        }
+        MouseAction action = MouseAction::Press;
+        if (motion) {
+            action = MouseAction::Motion;
+        } else if (release) {
+            action = MouseAction::Release;
+        }
+        return MouseEvent{button, action, (code & 4) != 0, (code & 8) != 0, (code & 16) != 0, row, column};
     }
 
     SgrState state_ = SgrState::Ground;
