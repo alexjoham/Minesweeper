@@ -4,9 +4,16 @@
 
 A mouse-driven Minesweeper for the terminal, written in C++20.
 
-The game board is 9x9 and there are 10 mines. It's not the game itself that's interesting. The purpose of this repository is the framework around it: target-based CMake, a game core that contains no I/O, GoogleTest with 106 test cases, AddressSanitizer and UndefinedBehaviorSanitizer presets, `clang-tidy` and `clang-format` enforced in CI, and every warning promoted to an error on two compilers.
+The game board is 9x9 and there are 10 mines. It's not the game itself that's interesting. The purpose of this repository is the framework around it: target-based CMake, a game core that contains no I/O, GoogleTest unit tests, AddressSanitizer and UndefinedBehaviorSanitizer presets, `clang-tidy` and `clang-format` enforced in CI, and every warning promoted to an error on two compilers.
 
 Tagged [`v2.0`](https://github.com/alexjoham/Minesweeper/releases/tag/v2.0).
+
+## Status
+
+Complete, and not under active development. The game is finished and the repository stays as a
+reference for the framework around it. The most interesting part technically is the input parser:
+a small state machine driven by a transition table ([`docs/sgr-parser.md`](docs/sgr-parser.md)),
+where every row of the table and every documented edge case has a test.
 
 ## What it looks like
 
@@ -138,7 +145,7 @@ Run the tests:
 ctest --preset debug
 ```
 
-Expected output ends with `100% tests passed out of 106`.
+Expected output ends with `100% tests passed`.
 
 Release build:
 
@@ -217,7 +224,7 @@ src/
   main.cpp              raw-mode terminal setup, the event loop, click handling
   helpers.hpp           write() wrapper, cursor positioning, screen clear
   game/
-    game.hpp/.cpp       Game: board state, flood fill, flagging, win check. No I/O.
+    game.hpp/.cpp       Game: board state, flood fill, flagging, won/lost outcome. No I/O.
     random_layout.hpp   randomLayout<N>(mine_count, rng), a pure function
   tui/
     tui.hpp/.cpp        Tui: renders a Game::Board, maps screen coordinates to cells
@@ -225,12 +232,12 @@ src/
     button.hpp/.cpp     Button base, LabelButton, UnicodeButton
   input/
     sgr_parser.hpp      SgrParser: byte-by-byte parser for keys and SGR mouse reports
-  enums/                FieldType, GameState
+  enums/                FieldType, GameState, GameOutcome
   structs/              BoardCoord
 tests/
-  game_test.cpp         25 cases against the core
+  game_test.cpp         cases against the core
   tui_test.cpp          glyph and hit-testing cases
-  sgr_parser_test.cpp   65 cases against the input parser
+  sgr_parser_test.cpp   cases against the input parser
 ```
 
 CMake targets:
@@ -246,7 +253,7 @@ CMake targets:
 
 Input follows the same rule. `SgrParser` is a push parser: `main()` feeds it one byte at a time and gets back at most one key or mouse event, so the whole state machine is `constexpr` and tested without a terminal. The design, the transition table and the edge cases are in [`docs/sgr-parser.md`](docs/sgr-parser.md).
 
-The split is the most important design constraint. `Game` never prints. Therefore, every rule in the game can be tested without a terminal, screen buffer or captured stream. This is why the core carries 25 tests and the flood fill can be asserted cell by cell.
+The split is the most important design constraint. `Game` never prints. Therefore, every rule in the game can be tested without a terminal, screen buffer or captured stream. This is why the core is covered by plain unit tests and the flood fill can be asserted cell by cell.
 
 ## Engineering standards
 
