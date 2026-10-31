@@ -1,6 +1,7 @@
 #include "game.hpp"
 
 #include "../enums/field_type.hpp"
+#include "../enums/game_outcome.hpp"
 #include "../structs/board_coord.hpp"
 #include "random_layout.hpp"
 
