@@ -315,6 +315,15 @@ TEST(GameTest, GameWonIsTrueOnceEveryNonMineCellIsRevealed) {
     EXPECT_TRUE(game.game_won());
 }
 
+// revealAll() leaves no hidden cell, which used to make game_won() true on
+// a board the player had just lost.
+TEST(GameTest, GameWonIsFalseAfterALoss) {
+    Game game = Game(layoutWith({{4, 4}}));
+    ASSERT_EQ(game.makeMove(4, 4).size(), 1u); // the mine
+    game.revealAll();
+    EXPECT_FALSE(game.game_won());
+}
+
 TEST(GameTest, MakeMoveFloodFillStopsAtNumberedBoundaryLeavingSurroundedCellsHidden) {
     Game game = Game(layoutWith({
         {3, 3},
