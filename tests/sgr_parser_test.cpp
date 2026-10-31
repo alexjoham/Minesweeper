@@ -29,6 +29,13 @@ constexpr Events<N - 1> parse_all(const char (&input)[N]) {
     return events;
 }
 
+// Every group 4 report is at row 6, column 10; the tests only differ in
+// the button code and the final byte.
+constexpr MouseEvent mouse(MouseButton button, MouseAction action, bool shift = false, bool meta = false,
+                           bool ctrl = false) {
+    return MouseEvent{button, action, shift, meta, ctrl, 6, 10};
+}
+
 } // namespace
 
 TEST(SgrParserTest, PrintableByteGivesOneKey) {
@@ -372,4 +379,186 @@ TEST(SgrParserTest, C0InDiscardIsReportedAndKeepsState) {
     ASSERT_EQ(ev.count, 2U);
     EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{0x03}});
     EXPECT_EQ(ev.items[1], InputEvent{KeyEvent{'a'}});
+}
+
+// Group 4: the button code. Low bits 0-3 select the button, 4/8/16 are
+// shift/meta/ctrl, 32 is motion, 64 the wheel and 128 buttons 8-11.
+TEST(SgrParserTest, MiddlePressGivesMiddle) {
+    const auto ev = parse_all("\x1b"
+                              "[<1;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Middle, MouseAction::Press)});
+}
+TEST(SgrParserTest, RightPressGivesRight) {
+    const auto ev = parse_all("\x1b"
+                              "[<2;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Right, MouseAction::Press)});
+}
+// Mouse movement with no button held: low bits 3 plus the motion bit.
+TEST(SgrParserTest, NoneWithMotionGivesNoneMotion) {
+    const auto ev = parse_all("\x1b"
+                              "[<35;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::None, MouseAction::Motion)});
+}
+
+// Each modifier flag has its own test with the other two false, so a
+// swapped flag cannot pass.
+TEST(SgrParserTest, Flag4SetsShift) {
+    const auto ev = parse_all("\x1b"
+                              "[<4;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Left, MouseAction::Press, true, false, false)});
+}
+TEST(SgrParserTest, Flag8SetsMeta) {
+    const auto ev = parse_all("\x1b"
+                              "[<8;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Left, MouseAction::Press, false, true, false)});
+}
+TEST(SgrParserTest, Flag16SetsCtrl) {
+    const auto ev = parse_all("\x1b"
+                              "[<16;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Left, MouseAction::Press, false, false, true)});
+}
+TEST(SgrParserTest, AllModifierFlagsTogether) {
+    const auto ev = parse_all("\x1b"
+                              "[<28;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Left, MouseAction::Press, true, true, true)});
+}
+// Drag: the button stays Left, the action becomes Motion.
+TEST(SgrParserTest, Flag32GivesMotion) {
+    const auto ev = parse_all("\x1b"
+                              "[<32;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Left, MouseAction::Motion)});
+}
+
+TEST(SgrParserTest, Code64GivesWheelUp) {
+    const auto ev = parse_all("\x1b"
+                              "[<64;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::WheelUp, MouseAction::Press)});
+}
+TEST(SgrParserTest, Code65GivesWheelDown) {
+    const auto ev = parse_all("\x1b"
+                              "[<65;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::WheelDown, MouseAction::Press)});
+}
+TEST(SgrParserTest, Code66GivesWheelLeft) {
+    const auto ev = parse_all("\x1b"
+                              "[<66;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::WheelLeft, MouseAction::Press)});
+}
+TEST(SgrParserTest, Code67GivesWheelRight) {
+    const auto ev = parse_all("\x1b"
+                              "[<67;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::WheelRight, MouseAction::Press)});
+}
+// 64 + 16: the wheel with ctrl held.
+TEST(SgrParserTest, WheelKeepsItsModifiers) {
+    const auto ev = parse_all("\x1b"
+                              "[<80;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::WheelUp, MouseAction::Press, false, false, true)});
+}
+
+TEST(SgrParserTest, Code128GivesButton8) {
+    const auto ev = parse_all("\x1b"
+                              "[<128;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Button8, MouseAction::Press)});
+}
+TEST(SgrParserTest, Code129GivesButton9) {
+    const auto ev = parse_all("\x1b"
+                              "[<129;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Button9, MouseAction::Press)});
+}
+TEST(SgrParserTest, Code130GivesButton10) {
+    const auto ev = parse_all("\x1b"
+                              "[<130;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Button10, MouseAction::Press)});
+}
+TEST(SgrParserTest, Code131GivesButton11) {
+    const auto ev = parse_all("\x1b"
+                              "[<131;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Button11, MouseAction::Press)});
+}
+TEST(SgrParserTest, Button8ReleaseGivesRelease) {
+    const auto ev = parse_all("\x1b"
+                              "[<128;10;6m");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Button8, MouseAction::Release)});
+}
+
+// Rejections from "Button codes" in docs/sgr-parser.md. They continue with
+// 'a' like the group 3 rejections. 192 and 255 are the ends of the range
+// that sets both 64 and 128; 256 and 9999 are above any legal code.
+TEST(SgrParserTest, Code192GivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<192;10;6Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+TEST(SgrParserTest, Code255GivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<255;10;6Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+TEST(SgrParserTest, Code256GivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<256;10;6Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+TEST(SgrParserTest, Code9999GivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<9999;10;6Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+// None without the motion bit never comes from a terminal.
+TEST(SgrParserTest, NonePressGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<3;10;6Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+TEST(SgrParserTest, NoneReleaseGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<3;10;6ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+// The wheel only sends presses.
+TEST(SgrParserTest, WheelReleaseGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<64;10;6ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+// 64 + 32.
+TEST(SgrParserTest, WheelWithMotionGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<96;10;6Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+// Motion always ends in M.
+TEST(SgrParserTest, MotionWithReleaseGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<32;10;6ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
 }
