@@ -1,5 +1,6 @@
 #pragma once
 #include "../enums/field_type.hpp"
+#include "../enums/game_outcome.hpp"
 #include "../structs/board_coord.hpp"
 #include "random_layout.hpp"
 
@@ -47,7 +48,11 @@ public:
         return std::nullopt;
     }
 
-    bool game_won() const;
+    // Decided inside makeMove: Lost the moment a mine is revealed, Won once
+    // every cell that is not a mine is revealed. revealAll() never changes it.
+    GameOutcome outcome() const noexcept { return outcome_; }
+
+    bool game_won() const noexcept { return outcome_ == GameOutcome::Won; }
 
     explicit Game(const MineLayout& mines);
 
@@ -57,6 +62,10 @@ private:
     void createNewGame(const MineLayout& mines);
 
     void updateNearbyMineNumbers();
+
+    bool allSafeCellsRevealed() const;
+
+    void updateOutcome(bool hit_mine);
 
     void updateFieldsAroundMine(size_t row, size_t column);
 
@@ -70,6 +79,7 @@ private:
      */
     std::array<std::array<int, kFieldSize>, kFieldSize> minefield_{};
     Board playerfield_{};
+    GameOutcome outcome_ = GameOutcome::Playing;
 
     FieldType getFieldType(size_t row, size_t column) const {
         switch (minefield_[row][column]) {

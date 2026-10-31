@@ -43,6 +43,7 @@ void Game::createNewGame(const MineLayout& mines) {
         }
     }
     playerfield_ = Board{};
+    outcome_ = GameOutcome::Playing;
     updateNearbyMineNumbers();
 }
 
@@ -61,9 +62,11 @@ std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
         if (fieldType != FieldType::NEUTRAL) {
             playerfield_[row][column].hidden = false;
             revealedButtons.push_back(RevealedCell{BoardCoord{row, column}, playerfield_[row][column]});
+            updateOutcome(fieldType == FieldType::MINE);
             return revealedButtons;
         }
         std::vector<RevealedCell> vector = revealFieldsAroundMove(row, column);
+        updateOutcome(false);
         return vector;
     }
     return revealedButtons;
@@ -128,7 +131,15 @@ std::vector<RevealedCell> Game::revealAll() {
     return revealedButtons;
 }
 
-bool Game::game_won() const {
+void Game::updateOutcome(bool hit_mine) {
+    if (hit_mine) {
+        outcome_ = GameOutcome::Lost;
+    } else if (allSafeCellsRevealed()) {
+        outcome_ = GameOutcome::Won;
+    }
+}
+
+bool Game::allSafeCellsRevealed() const {
     for (size_t i = 0; i < kFieldSize; i++) {
         for (size_t j = 0; j < kFieldSize; j++) {
             if (playerfield_[i][j].hidden) {

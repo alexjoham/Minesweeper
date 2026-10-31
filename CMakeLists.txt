@@ -36,6 +36,7 @@ target_link_libraries(minesweeper PRIVATE ms_tui ms_input ms_warnings)
 set(MS_HEADERS
     src/button/button.hpp
     src/enums/field_type.hpp
+    src/enums/game_outcome.hpp
     src/enums/game_state.hpp
     src/game/game.hpp
     src/game/random_layout.hpp

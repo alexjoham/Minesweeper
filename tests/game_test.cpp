@@ -1,6 +1,7 @@
 #include "src/game/game.hpp"
 
 #include "src/enums/field_type.hpp"
+#include "src/enums/game_outcome.hpp"
 #include "src/game/random_layout.hpp"
 #include "src/structs/board_coord.hpp"
 
@@ -322,6 +323,54 @@ TEST(GameTest, GameWonIsFalseAfterALoss) {
     ASSERT_EQ(game.makeMove(4, 4).size(), 1u); // the mine
     game.revealAll();
     EXPECT_FALSE(game.game_won());
+}
+
+TEST(GameTest, OutcomeIsPlayingOnAFreshBoard) {
+    Game game = Game(layoutWith({{8, 8}}));
+    EXPECT_EQ(game.outcome(), GameOutcome::Playing);
+}
+
+TEST(GameTest, OutcomeIsPlayingWhileSafeCellsRemainHidden) {
+    Game game = Game(layoutWith({{4, 4}}));
+    ASSERT_EQ(game.makeMove(3, 3).size(), 1u);
+    EXPECT_EQ(game.outcome(), GameOutcome::Playing);
+}
+
+// The loss is decided by makeMove itself, without revealAll().
+TEST(GameTest, OutcomeIsLostTheMomentAMineIsRevealed) {
+    Game game = Game(layoutWith({{4, 4}}));
+    ASSERT_EQ(game.makeMove(4, 4).size(), 1u);
+    EXPECT_EQ(game.outcome(), GameOutcome::Lost);
+    EXPECT_FALSE(game.game_won());
+}
+
+TEST(GameTest, OutcomeIsWonOnceEverySafeCellIsRevealed) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.makeMove(0, 0);
+    EXPECT_EQ(game.outcome(), GameOutcome::Won);
+}
+
+// main() calls revealAll() after a win to show the mines.
+TEST(GameTest, RevealAllKeepsTheWonOutcome) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.makeMove(0, 0);
+    game.revealAll();
+    EXPECT_EQ(game.outcome(), GameOutcome::Won);
+}
+
+TEST(GameTest, RevealAllDoesNotDecideAFreshGame) {
+    Game game = Game(layoutWith({{8, 8}}));
+    game.revealAll();
+    EXPECT_EQ(game.outcome(), GameOutcome::Playing);
+    EXPECT_FALSE(game.game_won());
+}
+
+TEST(GameTest, RestartResetsALostOutcome) {
+    Game game = Game(layoutWith({{4, 4}}));
+    game.makeMove(4, 4);
+    ASSERT_EQ(game.outcome(), GameOutcome::Lost);
+    game.restart();
+    EXPECT_EQ(game.outcome(), GameOutcome::Playing);
 }
 
 TEST(GameTest, MakeMoveFloodFillStopsAtNumberedBoundaryLeavingSurroundedCellsHidden) {
