@@ -33,12 +33,14 @@ public:
 
     std::vector<RevealedCell> revealAll();
 
+    // Once the outcome is decided the board is frozen: makeMove reveals
+    // nothing and toggleFlag returns nullopt. revealAll() still works.
     std::vector<RevealedCell> makeMove(size_t row, size_t column);
 
     const Board& getPlayerfield() const { return playerfield_; }
 
     std::optional<Playerield> toggleFlag(size_t row, size_t column) {
-        if (row >= kFieldSize || column >= kFieldSize) {
+        if (outcome_ != GameOutcome::Playing || row >= kFieldSize || column >= kFieldSize) {
             return std::nullopt;
         }
         if (playerfield_[row][column].hidden) {

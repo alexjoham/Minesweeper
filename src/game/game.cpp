@@ -54,7 +54,7 @@ void Game::restart() {
 
 std::vector<RevealedCell> Game::makeMove(size_t row, size_t column) {
     std::vector<RevealedCell> revealedButtons;
-    if (row >= kFieldSize || column >= kFieldSize) {
+    if (outcome_ != GameOutcome::Playing || row >= kFieldSize || column >= kFieldSize) {
         return revealedButtons;
     }
     if (playerfield_[row][column].hidden && !playerfield_[row][column].flagged) {
