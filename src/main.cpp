@@ -1,5 +1,5 @@
 #include "button/button.hpp"
-#include "enums/field_type.hpp"
+#include "enums/game_outcome.hpp"
 #include "enums/game_state.hpp"
 #include "game/game.hpp"
 #include "helpers.hpp"
@@ -172,29 +172,23 @@ static void handle_mouse(const MouseEvent& mouse, std::vector<std::unique_ptr<Bu
                 tui.drawGame(game.getPlayerfield());
                 return;
             }
-            bool game_lost = false;
             if (!set_flag) {
                 if (auto cell = tui.boardCellAt(row, column)) {
-                    auto result = game.makeMove(cell->row, cell->column);
-                    if (result.size() > 0) {
-                        if (result.size() == 1 && result.front().cell.fieldType == FieldType::MINE) {
-                            result = game.revealAll();
-                            game_lost = true;
-                        }
-                    }
+                    game.makeMove(cell->row, cell->column);
                 }
             } else {
                 if (auto cell = tui.boardCellAt(row, column)) {
                     game.toggleFlag(cell->row, cell->column);
                 }
             }
-            if (game_lost) {
+            if (game.outcome() == GameOutcome::Lost) {
+                game.revealAll();
                 state = GameState::LOST;
                 drawGameLost();
                 tui.drawGame(game.getPlayerfield());
                 return;
             }
-            if (game.game_won()) {
+            if (game.outcome() == GameOutcome::Won) {
                 game.revealAll();
                 drawGameWon();
                 tui.drawGame(game.getPlayerfield());
