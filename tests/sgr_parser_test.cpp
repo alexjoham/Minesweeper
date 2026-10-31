@@ -500,6 +500,13 @@ TEST(SgrParserTest, Button8ReleaseGivesRelease) {
     EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Button8, MouseAction::Release)});
 }
 
+TEST(SgrParserTest, Code191IsTheLargestAccepted) {
+    const auto ev = parse_all("\x1b"
+                              "[<191;10;6M");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{mouse(MouseButton::Button11, MouseAction::Motion, true, true, true)});
+}
+
 // Rejections from "Button codes" in docs/sgr-parser.md. They continue with
 // 'a' like the group 3 rejections. 192 and 255 are the ends of the range
 // that sets both 64 and 128; 256 and 9999 are above any legal code.
