@@ -188,3 +188,188 @@ TEST(SgrParserTest, Ss3SwallowsOrdinaryKey) {
     ASSERT_EQ(ev.count, 1U);
     EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
 }
+
+// SGR reports are ESC [ < button ; column ; row, then M or m. Column and
+// row differ in every test, so swapping them cannot pass.
+TEST(SgrParserTest, LeftPressGivesMouseEvent) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;10;6M");
+    constexpr MouseEvent expected{
+        .button = MouseButton::Left,
+        .action = MouseAction::Press,
+        .shift = false,
+        .meta = false,
+        .ctrl = false,
+        .row = 6,
+        .column = 10,
+    };
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{expected});
+}
+
+TEST(SgrParserTest, LeftReleaseGivesMouseEvent) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;10;6m");
+    constexpr MouseEvent expected{
+        .button = MouseButton::Left,
+        .action = MouseAction::Release,
+        .shift = false,
+        .meta = false,
+        .ctrl = false,
+        .row = 6,
+        .column = 10,
+    };
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{expected});
+}
+
+// The Esc-then-click case from docs/sgr-parser.md: the first ESC is
+// abandoned silently and the press still arrives.
+TEST(SgrParserTest, EscThenClickGivesExactlyOneEvent) {
+    const auto ev = parse_all("\x1b"
+                              "\x1b"
+                              "[<0;10;6M");
+    constexpr MouseEvent expected{
+        .button = MouseButton::Left,
+        .action = MouseAction::Press,
+        .shift = false,
+        .meta = false,
+        .ctrl = false,
+        .row = 6,
+        .column = 10,
+    };
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{expected});
+}
+
+// The tests below continue with 'a': asserting only "no event" would
+// pass against a parser that does nothing, and 'a' shows that the parser
+// is back in Ground afterwards.
+
+// F5 is ESC [ 15 ~: not a mouse report, so nothing comes out.
+TEST(SgrParserTest, NonMouseCsiGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[15~a");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+// The final byte comes right after ESC [ (an arrow key): CsiEntry row.
+TEST(SgrParserTest, CsiFinalByteRightAfterEntryGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[Aa");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, TooManyValuesGiveNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;5;5;9Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, EmptyFirstValueGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<;5;5Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, EmptyMiddleValueGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;;5Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, TooFewValuesGiveNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;5Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, RowZeroGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;5;0Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, ColumnZeroGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;0;5Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, FiveDigitNumberGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;10000;5Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+TEST(SgrParserTest, MinusSignGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;-5;7Ma");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+// A final byte other than M or m ends the report without an event.
+TEST(SgrParserTest, OtherFinalByteInMouseParamGivesNothing) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;5;5~a");
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{'a'}});
+}
+
+// The other side of the 5-digit rejection: 9999 still fits.
+TEST(SgrParserTest, FourDigitMaximumIsAccepted) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;9999;9998M");
+    constexpr MouseEvent expected{
+        .button = MouseButton::Left,
+        .action = MouseAction::Press,
+        .shift = false,
+        .meta = false,
+        .ctrl = false,
+        .row = 9998,
+        .column = 9999,
+    };
+    ASSERT_EQ(ev.count, 1U);
+    EXPECT_EQ(ev.items[0], InputEvent{expected});
+}
+
+// Ctrl+C inside a sequence is reported and the sequence goes on.
+TEST(SgrParserTest, C0InMouseParamIsReportedAndKeepsState) {
+    const auto ev = parse_all("\x1b"
+                              "[<0;1"
+                              "\x03" // Ctrl+C
+                              "0;6M");
+    constexpr MouseEvent expected{
+        .button = MouseButton::Left,
+        .action = MouseAction::Press,
+        .shift = false,
+        .meta = false,
+        .ctrl = false,
+        .row = 6,
+        .column = 10,
+    };
+    ASSERT_EQ(ev.count, 2U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{0x03}});
+    EXPECT_EQ(ev.items[1], InputEvent{expected});
+}
+
+// Ctrl+C inside a rejected sequence still quits.
+TEST(SgrParserTest, C0InDiscardIsReportedAndKeepsState) {
+    const auto ev = parse_all("\x1b"
+                              "[<;"
+                              "\x03" // Ctrl+C
+                              "5;5Ma");
+    ASSERT_EQ(ev.count, 2U);
+    EXPECT_EQ(ev.items[0], InputEvent{KeyEvent{0x03}});
+    EXPECT_EQ(ev.items[1], InputEvent{KeyEvent{'a'}});
+}
