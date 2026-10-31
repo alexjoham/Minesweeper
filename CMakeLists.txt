@@ -26,8 +26,12 @@ target_include_directories(ms_tui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(ms_tui PUBLIC cxx_std_20)
 target_link_libraries(ms_tui PUBLIC ms_core PRIVATE ms_warnings)
 
+add_library(ms_input INTERFACE)
+target_include_directories(ms_input INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_features(ms_input INTERFACE cxx_std_20)
+
 add_executable(minesweeper src/main.cpp)
-target_link_libraries(minesweeper PRIVATE ms_tui ms_warnings)
+target_link_libraries(minesweeper PRIVATE ms_tui ms_input ms_warnings)
 
 set(MS_HEADERS
     src/button/button.hpp
@@ -36,6 +40,7 @@ set(MS_HEADERS
     src/game/game.hpp
     src/game/random_layout.hpp
     src/helpers.hpp
+    src/input/sgr_parser.hpp
     src/structs/board_coord.hpp
     src/tui/tui.hpp
 )
@@ -68,6 +73,7 @@ include(GoogleTest)
 add_executable(ms_tests
     tests/game_test.cpp
     tests/tui_test.cpp
+    tests/sgr_parser_test.cpp
 )
-target_link_libraries(ms_tests PRIVATE ms_tui ms_warnings GTest::gtest_main)
+target_link_libraries(ms_tests PRIVATE ms_tui ms_input ms_warnings GTest::gtest_main)
 gtest_discover_tests(ms_tests)

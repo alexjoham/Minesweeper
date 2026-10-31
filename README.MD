@@ -4,7 +4,7 @@
 
 A mouse-driven Minesweeper for the terminal, written in C++20.
 
-The game board is 9x9 and there are 10 mines. It's not the game itself that's interesting. The purpose of this repository is the framework around it: target-based CMake, a game core that contains no I/O, GoogleTest with 41 test cases, AddressSanitizer and UndefinedBehaviorSanitizer presets, `clang-tidy` and `clang-format` enforced in CI, and every warning promoted to an error on two compilers.
+The game board is 9x9 and there are 10 mines. It's not the game itself that's interesting. The purpose of this repository is the framework around it: target-based CMake, a game core that contains no I/O, GoogleTest with 106 test cases, AddressSanitizer and UndefinedBehaviorSanitizer presets, `clang-tidy` and `clang-format` enforced in CI, and every warning promoted to an error on two compilers.
 
 Tagged [`v2.0`](https://github.com/alexjoham/Minesweeper/releases/tag/v2.0).
 
@@ -116,6 +116,14 @@ A mouse is required. The program puts the terminal into raw mode and enables SGR
 
 ## Build, run, test
 
+Once per clone, enable the repository's git hooks. The `commit-msg` hook rejects commit messages
+with any line over 72 characters, the subject included. The `pre-commit` hook rejects staged C++
+files that `clang-format` would change (set `CLANG_FORMAT` to pick the binary; CI uses 18):
+
+```bash
+git config core.hooksPath tools/hooks
+```
+
 Presets are the shortest path. They write into `build/debug`, `build/release` and `build/asan`.
 
 ```bash
@@ -130,7 +138,7 @@ Run the tests:
 ctest --preset debug
 ```
 
-Expected output ends with `100% tests passed out of 41`.
+Expected output ends with `100% tests passed out of 106`.
 
 Release build:
 
@@ -177,7 +185,7 @@ clang-tidy-18 -p build/debug \
   --checks='-*,misc-include-cleaner' \
   --warnings-as-errors='*' \
   src/game/game.cpp src/tui/tui.cpp src/button/button.cpp src/main.cpp \
-  tests/game_test.cpp tests/tui_test.cpp
+  tests/game_test.cpp tests/tui_test.cpp tests/sgr_parser_test.cpp
 
 # formatting check, non-destructive
 clang-format-18 --dry-run --Werror $(git ls-files '*.cpp' '*.hpp')
@@ -206,7 +214,7 @@ must be green.
 
 ```
 src/
-  main.cpp              raw-mode terminal setup, SGR mouse parsing, the event loop
+  main.cpp              raw-mode terminal setup, the event loop, click handling
   helpers.hpp           write() wrapper, cursor positioning, screen clear
   game/
     game.hpp/.cpp       Game: board state, flood fill, flagging, win check. No I/O.
@@ -215,11 +223,14 @@ src/
     tui.hpp/.cpp        Tui: renders a Game::Board, maps screen coordinates to cells
   button/
     button.hpp/.cpp     Button base, LabelButton, UnicodeButton
+  input/
+    sgr_parser.hpp      SgrParser: byte-by-byte parser for keys and SGR mouse reports
   enums/                FieldType, GameState
   structs/              BoardCoord
 tests/
   game_test.cpp         25 cases against the core
   tui_test.cpp          glyph and hit-testing cases
+  sgr_parser_test.cpp   65 cases against the input parser
 ```
 
 CMake targets:
@@ -229,8 +240,11 @@ CMake targets:
 | `ms_warnings` | `INTERFACE` | The warning flag set, applied per target and never to dependencies |
 | `ms_core` | library | `game.cpp`. Contains no reference to `write` or to any ANSI escape |
 | `ms_tui` | library | `tui.cpp`, `button.cpp`. Links `ms_core` publicly |
-| `minesweeper` | executable | `main.cpp` |
-| `ms_tests` | executable | Links `ms_tui` and `GTest::gtest_main`, registered with `gtest_discover_tests` |
+| `ms_input` | `INTERFACE` | The header-only `SgrParser` in `src/input/sgr_parser.hpp`. No I/O, no dependency on the game |
+| `minesweeper` | executable | `main.cpp`. Links `ms_tui` and `ms_input` |
+| `ms_tests` | executable | Links `ms_tui`, `ms_input` and `GTest::gtest_main`, registered with `gtest_discover_tests` |
+
+Input follows the same rule. `SgrParser` is a push parser: `main()` feeds it one byte at a time and gets back at most one key or mouse event, so the whole state machine is `constexpr` and tested without a terminal. The design, the transition table and the edge cases are in [`docs/sgr-parser.md`](docs/sgr-parser.md).
 
 The split is the most important design constraint. `Game` never prints. Therefore, every rule in the game can be tested without a terminal, screen buffer or captured stream. This is why the core carries 25 tests and the flood fill can be asserted cell by cell.
 
